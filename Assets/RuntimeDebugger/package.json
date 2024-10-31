@@ -1,0 +1,22 @@
+{
+  "name": "com.hm.RuntimeDebugger",
+  "version": "1.0.0",
+  "displayName": "RuntimeDebugger",
+  "description": "RuntimeDebugger 运行时debug面板",
+  "unity": "2021.3",
+  "dependencies": {
+ 
+  },
+  "author": {
+    "name": "HuangMin",
+    "email": "hmok@163.com",
+    "url": "https://github.com/hmok38/RuntimeDebugger"
+  },
+  "samples": [
+    {
+      "displayName": "Sample",
+      "description": "使用示例",
+      "path": "Samples~/Sample"
+    }
+  ]
+}

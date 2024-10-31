@@ -1,0 +1,16 @@
+{
+    "name": "RuntimeDebugger",
+    "rootNamespace": "RuntimeDebugger",
+    "references": [
+        "HM.HMFW"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
