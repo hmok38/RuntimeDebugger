@@ -1,11 +1,10 @@
 {
-  "name": "com.hm.RuntimeDebugger",
-  "version": "1.0.0",
+  "name": "com.hm.runtimeeebugger",
+  "version": "1.0.1",
   "displayName": "RuntimeDebugger",
   "description": "RuntimeDebugger 运行时debug面板",
   "unity": "2021.3",
   "dependencies": {
- 
   },
   "author": {
     "name": "HuangMin",
