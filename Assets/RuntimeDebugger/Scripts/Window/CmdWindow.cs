@@ -39,7 +39,7 @@ namespace RuntimeDebugger
 
         protected override void OnDrawScrollableWindow()
         {
-            if (!_beOpenCmd) //!Application.isEditor &&
+            if (!Application.isEditor && !_beOpenCmd)
             {
                 _inputPassword = GUILayout.TextField(_inputPassword);
                 if (GUILayout.Button("输入密码解锁Cmd"))
