@@ -27,9 +27,11 @@ namespace RuntimeDebugger
                 Delegate = cb,
                 Button = button
             };
+            _cmdInfos.RemoveAll(x => x.Cmd.Equals(cmd));
             _cmdInfos.Add(newInfo);
             if (!string.IsNullOrEmpty(button))
             {
+                _buttons.RemoveAll(x => x.Cmd.Equals(cmd));
                 _buttons.Add(newInfo);
             }
         }
