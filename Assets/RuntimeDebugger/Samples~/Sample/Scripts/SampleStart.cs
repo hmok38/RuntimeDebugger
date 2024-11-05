@@ -21,6 +21,10 @@ public class SampleStart : MonoBehaviour
            //设置日志最大行数
             SampleStart.DebugMgr.SetConsoleMaxLine(200);
             SampleStart.DebugMgr.RegisterDebuggerWindow("GM",new GmTestWindow());
+            
+            //添加相同的cmd会覆盖之前的
+            SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
+            
         }
     }
 
