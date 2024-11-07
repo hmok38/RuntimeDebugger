@@ -61,7 +61,7 @@ namespace RuntimeDebugger
             else
             {
                 GUILayout.BeginHorizontal();
-                GUI.SetNextControlName("InputCmd");
+                // GUI.SetNextControlName("InputCmd");
                 var cmd = GUILayout.TextField(_inputCmd);
 
                 if (!string.IsNullOrEmpty(cmd))
@@ -125,7 +125,7 @@ namespace RuntimeDebugger
 
                     if (GUILayout.Button(_buttons[i].Button))
                     {
-                        GUI.FocusControl("InputCmd");
+                        //  GUI.FocusControl("InputCmd");
                         _inputCmd = _buttons[i].Cmd + " ";
                         _beForceFindCmd = true;
                     }
