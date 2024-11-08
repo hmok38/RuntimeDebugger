@@ -54,6 +54,7 @@ namespace RuntimeDebugger
         private FpsCounter _mFpsCounter;
         private SettingsWindow _mSettingsWindow = new();
         private CmdWindow _cmdWindow = new();
+        public static int BundleVersionCode = -1;
 
         internal float WindowScale
         {
@@ -144,6 +145,7 @@ namespace RuntimeDebugger
 
         public static DebuggerMgr Init(bool beForceCreat = false)
         {
+            BundleVersionCode = GetVersionCode();
             bool beCreat = false;
             int maxCount = 300;
             string filePath = Path.Combine(Application.persistentDataPath, "logsetting.txt");
@@ -246,12 +248,13 @@ namespace RuntimeDebugger
 
             if (_mShowFullWindow)
             {
-                string title = $"<b>DEBUGGER</b>　　{DateTime.Now}";
+                string title = $"<b>v {Application.version} b {BundleVersionCode}</b>　　{DateTime.Now}";
                 _mWindowRect = GUILayout.Window(0, _mWindowRect, DrawWindow, title);
             }
             else
             {
-                _mIconRect = GUILayout.Window(0, _mIconRect, DrawDebuggerWindowIcon, "<b>DEBUGGER</b>");
+                _mIconRect = GUILayout.Window(0, _mIconRect, DrawDebuggerWindowIcon,
+                    $"<b>v {Application.version} b {BundleVersionCode}</b>");
             }
 
             GUI.matrix = cachedMatrix;
@@ -562,6 +565,26 @@ namespace RuntimeDebugger
         public void SetConsoleMaxLine(int maxLine)
         {
             _mConsoleWindow.MaxLine = maxLine;
+        }
+
+        /// <summary>
+        /// 获取bundleVersionCode
+        /// </summary>
+        /// <returns></returns>
+        public static int GetVersionCode()
+        {
+#if !UNITY_EDITOR && UNITY_ANDROID
+        AndroidJavaClass contextCls = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        AndroidJavaObject context = contextCls.GetStatic<AndroidJavaObject>("currentActivity");
+        AndroidJavaObject packageMngr = context.Call<AndroidJavaObject>("getPackageManager");
+        string packageName = context.Call<string>("getPackageName");
+        AndroidJavaObject packageInfo = packageMngr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
+        return packageInfo.Get<int>("versionCode");
+#elif UNITY_EDITOR
+            return UnityEditor.PlayerSettings.Android.bundleVersionCode;
+#else
+        return 0;
+#endif
         }
     }
 }

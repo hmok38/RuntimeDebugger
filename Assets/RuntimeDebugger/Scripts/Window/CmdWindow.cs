@@ -38,17 +38,63 @@ namespace RuntimeDebugger
 
         private bool _beForceFindCmd;
         private string _passwordMsg;
+        private bool _hasFocus;
+        private TouchScreenKeyboard _keyboard;
+
+        private void SetTouchScreenKeyBoard(string focusedControlName)
+        {
+            if (TouchScreenKeyboard.isSupported && Event.current.type == EventType.Repaint)
+            {
+                bool currentFocus = GUI.GetNameOfFocusedControl() == focusedControlName; //InputCmd
+
+                if (currentFocus && !_hasFocus) //获得焦点就创建一个新的
+                {
+                    if (_keyboard == null || !_keyboard.active)
+                    {
+                        _keyboard = TouchScreenKeyboard.Open(_inputCmd, TouchScreenKeyboardType.Default);
+                    }
+                }
+                else if (!currentFocus && _hasFocus)
+                {
+                    if (_keyboard != null && _keyboard.active)
+                    {
+                        _keyboard.active = false;
+                    }
+                }
+
+                _hasFocus = currentFocus;
+            }
+        }
 
         protected override void OnDrawScrollableWindow()
         {
+            GUI.SetNextControlName("emptyLabel");
+            GUILayout.Label("CMD命令");
             if (!Application.isEditor && !_beOpenCmd)
             {
+                GUI.SetNextControlName("PasswordTextField");
                 _inputPassword = GUILayout.TextField(_inputPassword);
+
+                SetTouchScreenKeyBoard("PasswordTextField");
+
+                if (TouchScreenKeyboard.isSupported && _keyboard != null)
+                {
+                    //根据软键盘赋值
+                    _inputPassword = _keyboard.text;
+                }
+
                 if (GUILayout.Button("输入密码解锁Cmd"))
                 {
                     if (_inputPassword.Equals(Password))
                     {
                         _beOpenCmd = true;
+                        GUI.FocusControl("emptyLabel"); //移除焦点
+                        if (_keyboard != null)
+                        {
+                            _keyboard.active = false;
+                            _keyboard.text = "";
+                            _hasFocus = false;
+                        }
                     }
                     else
                     {
@@ -61,8 +107,13 @@ namespace RuntimeDebugger
             else
             {
                 GUILayout.BeginHorizontal();
-                // GUI.SetNextControlName("InputCmd");
+                GUI.SetNextControlName("InputCmd");
                 var cmd = GUILayout.TextField(_inputCmd);
+                SetTouchScreenKeyBoard("InputCmd");
+                if (TouchScreenKeyboard.isSupported && _keyboard != null)
+                {
+                    cmd = _keyboard.text;
+                }
 
                 if (!string.IsNullOrEmpty(cmd))
                 {
@@ -74,7 +125,6 @@ namespace RuntimeDebugger
                             TextEditor te =
                                 (TextEditor)GUIUtility.GetStateObject(typeof(TextEditor), GUIUtility.keyboardControl);
                             te.MoveTextEnd();
-                            //te.MoveCursorToPosition(new Vector2(_inputCmd.Length, 0)); // 将光标移动到文本末尾
                         }
 
                         _resultMsg = "";
@@ -91,9 +141,17 @@ namespace RuntimeDebugger
 
                 if (GUILayout.Button("执行Cmd"))
                 {
-                    _resultMsg = CmdExecute(cmd);
+                    GUI.FocusControl("emptyLabel"); //移除焦点到非输入框
+                    _resultMsg = CmdExecute(cmd, out var beSuc);
+                    if (beSuc)
+                    {
+                        _inputCmd = "";
+                        if (_keyboard != null)
+                        {
+                            _keyboard.text = "";
+                        }
+                    }
                 }
-
 
                 GUILayout.EndHorizontal();
                 if (_checkCmdInfos.Count >= 1)
@@ -125,15 +183,18 @@ namespace RuntimeDebugger
 
                     if (GUILayout.Button(_buttons[i].Button))
                     {
-                        //  GUI.FocusControl("InputCmd");
+                        GUI.FocusControl("InputCmd");
                         _inputCmd = _buttons[i].Cmd + " ";
                         _beForceFindCmd = true;
+                        if (TouchScreenKeyboard.isSupported && _keyboard != null)
+                            _keyboard.text = _inputCmd;
                     }
                 }
 
                 GUILayout.EndHorizontal();
             }
         }
+
 
         private void FindCmdInfo(string cmd, ref List<CmdInfo> infos)
         {
@@ -152,14 +213,14 @@ namespace RuntimeDebugger
                 var cmdInfo = _cmdInfos[i];
                 if (needFull)
                 {
-                    if (cmdInfo.Cmd.Equals(cmdArray[0]))
+                    if (cmdInfo.Cmd.ToLower().Equals(cmdArray[0].ToLower()))
                     {
                         infos.Add(cmdInfo);
                     }
                 }
                 else
                 {
-                    if (cmdInfo.Cmd.StartsWith(cmdArray[0]))
+                    if (cmdInfo.Cmd.ToLower().StartsWith(cmdArray[0].ToLower()))
                     {
                         infos.Add(cmdInfo);
                     }
@@ -167,15 +228,16 @@ namespace RuntimeDebugger
             }
         }
 
-        public string CmdExecute(string cmd)
+        public string CmdExecute(string cmd, out bool beSuc)
         {
+            beSuc = false;
             var cmdArray = cmd.Split(' ');
             if (cmdArray.Length <= 0)
             {
                 return $"<color=#ff0000>{DateTime.Now:MM.dd HH:mm:ss:fff} 无效的cmd:{cmd}</color>";
             }
 
-            var info = this._cmdInfos.Find(x => x.Cmd.Equals(cmdArray[0]));
+            var info = this._cmdInfos.Find(x => x.Cmd.ToLower().Equals(cmdArray[0].ToLower()));
             if (info == null)
             {
                 return $"<color=#ff0000>{DateTime.Now:MM.dd HH:mm:ss:fff} 无效的cmd:{cmd}</color>";
@@ -205,6 +267,7 @@ namespace RuntimeDebugger
                 return e.Message;
             }
 
+            beSuc = true;
             return $"{DateTime.Now:MM.dd HH:mm:ss:fff} 执行完成 {cmd}";
         }
     }
