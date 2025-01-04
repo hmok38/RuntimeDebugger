@@ -174,7 +174,7 @@ namespace RuntimeDebugger
 
                 for (int i = 0; i < _buttons.Count; i++)
                 {
-                    if (i > 0 && i % 4 == 0)
+                    if (i > 0 && i % 3 == 0)
                     {
                         GUILayout.EndHorizontal();
                         GUILayout.Space(10);
@@ -269,6 +269,16 @@ namespace RuntimeDebugger
 
             beSuc = true;
             return $"{DateTime.Now:MM.dd HH:mm:ss:fff} 执行完成 {cmd}";
+        }
+
+        /// <summary>
+        /// 移除某个cmd的指令
+        /// </summary>
+        /// <param name="cmd"></param>
+        internal void RemoveCmd(string cmd)
+        {
+            _cmdInfos.RemoveAll(x => x.Cmd.Equals(cmd));
+            _buttons.RemoveAll(x => x.Cmd.Equals(cmd));
         }
     }
 }

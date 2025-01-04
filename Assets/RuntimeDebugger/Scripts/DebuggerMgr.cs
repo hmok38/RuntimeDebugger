@@ -586,5 +586,14 @@ namespace RuntimeDebugger
         return 0;
 #endif
         }
+
+        /// <summary>
+        /// 移除某个cmd的指令
+        /// </summary>
+        /// <param name="cmd"></param>
+        public void RemoveCmd(string cmd)
+        {
+            _cmdWindow.RemoveCmd(cmd);
+        }
     }
 }

@@ -18,17 +18,22 @@ public class SampleStart : MonoBehaviour
             SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令 被触发"); }, "测试指令");
             SampleStart.DebugMgr.AddCmd("cmd.test1", "测试指令1 int:参数1 string:参数2",
                 (arg0, arg1) => { Debug.Log($"测试指令 被触发,参数1:{arg0} 参数2:{arg1}"); }, "测试指令1");
-           //设置日志最大行数
+            //设置日志最大行数
             SampleStart.DebugMgr.SetConsoleMaxLine(200);
-            SampleStart.DebugMgr.RegisterDebuggerWindow("GM",new GmTestWindow());
-            
+            SampleStart.DebugMgr.RegisterDebuggerWindow("GM", new GmTestWindow());
+
             //添加相同的cmd会覆盖之前的
             SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
-            
+
+            SampleStart.DebugMgr.AddCmd("cmd.removeTest0", "移除test0的按钮",
+                () => { SampleStart.DebugMgr.RemoveCmd("cmd.test0"); },"移除test0的按钮");
+            SampleStart.DebugMgr.AddCmd("cmd.ReAddTest0", "重新添加test0的按钮",
+                () =>
+                {
+                    SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
+                },"重新添加test0的按钮");
         }
     }
-
-  
 }
 
 public class GmTestWindow : RuntimeDebugger.ScrollableDebuggerWindowBase
