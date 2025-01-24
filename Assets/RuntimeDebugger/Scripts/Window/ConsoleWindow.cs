@@ -136,10 +136,10 @@ namespace RuntimeDebugger
             set => _mFatalColor = value;
         }
 
-        private bool _debuggerConsoleLockScroll= true,
-            _debuggerConsoleInfoFilter= true,
-            _debuggerConsoleWarningFilter= true,
-            _debuggerConsoleErrorFilter= true,
+        private bool _debuggerConsoleLockScroll = true,
+            _debuggerConsoleInfoFilter = true,
+            _debuggerConsoleWarningFilter = true,
+            _debuggerConsoleErrorFilter = true,
             _debuggerConsoleFatalFilter = true;
 
         public void Initialize(DebuggerMgr debuggerMgr, params object[] args)
@@ -626,7 +626,8 @@ namespace RuntimeDebugger
             }
 
             var file = File.Create(path);
-            file.Write(Encoding.UTF8.GetBytes(str));
+            var ar = Encoding.UTF8.GetBytes(str);
+            file.Write(ar, 0, ar.Length);
             file.Close();
             GUIUtility.systemCopyBuffer = str;
         }

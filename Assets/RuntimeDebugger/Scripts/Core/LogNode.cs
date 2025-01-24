@@ -1,6 +1,6 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Pool;
+
 
 // ReSharper disable once CheckNamespace
 namespace RuntimeDebugger
@@ -83,7 +83,7 @@ namespace RuntimeDebugger
             get { return _mStackTrack; }
         }
 
-        public static ObjectPool<LogNode> Pool;
+        public static MyObjectPool<LogNode> Pool;
 
         /// <summary>
         /// 创建日志记录结点。
@@ -96,7 +96,7 @@ namespace RuntimeDebugger
         {
             if (Pool == null)
             {
-                Pool = new ObjectPool<LogNode>(() => new LogNode(), _ => { },
+                Pool = new MyObjectPool<LogNode>(() => new LogNode(), _ => { },
                     obj => { obj.Clear(); }, _ => { });
             }
 

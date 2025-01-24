@@ -49,11 +49,11 @@ namespace RuntimeDebugger
         internal int MaxToolbarXCount = 8;
         internal float MWindowContentMaxWidth = DefaultWindowRect.width - DefaultWindowPadding * 2;
         internal float MWindowContentMaxHeight = DefaultWindowRect.height - DefaultWindowPadding * 2;
-        private ConsoleWindow _mConsoleWindow = new();
+        private ConsoleWindow _mConsoleWindow = new ConsoleWindow();
         private IDebuggerWindowManager _mDebuggerWindowManager;
         private FpsCounter _mFpsCounter;
-        private SettingsWindow _mSettingsWindow = new();
-        private CmdWindow _cmdWindow = new();
+        private SettingsWindow _mSettingsWindow = new SettingsWindow();
+        private CmdWindow _cmdWindow = new CmdWindow();
         public static int BundleVersionCode = -1;
 
         internal float WindowScale
@@ -159,7 +159,7 @@ namespace RuntimeDebugger
                     var lineStr = allLinesStr[i];
                     if (!string.IsNullOrEmpty(lineStr))
                     {
-                        var keyValues = lineStr.Split("=");
+                        var keyValues = lineStr.Split('=');
                         if (keyValues == null || keyValues.Length != 2)
                         {
                             continue;

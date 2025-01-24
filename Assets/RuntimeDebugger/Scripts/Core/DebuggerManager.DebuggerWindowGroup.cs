@@ -11,7 +11,7 @@ namespace RuntimeDebugger
         /// </summary>
         private sealed class DebuggerWindowGroup : IDebuggerWindowGroup
         {
-            private readonly List<KeyValuePair<string, IDebuggerWindow>> _debuggerWindows = new();
+            private readonly List<KeyValuePair<string, IDebuggerWindow>> _debuggerWindows = new List<KeyValuePair<string, IDebuggerWindow>>();
             private int _selectedIndex;
             private string[] _debuggerWindowNames;
 
