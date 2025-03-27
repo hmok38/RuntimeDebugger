@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 // ReSharper disable once CheckNamespace
@@ -143,6 +144,8 @@ namespace RuntimeDebugger
             }
         }
 
+        private static Image _imgComp;
+
         public static DebuggerMgr Init(bool beForceCreat = false)
         {
             BundleVersionCode = GetVersionCode();
@@ -187,6 +190,21 @@ namespace RuntimeDebugger
             var mgr = new GameObject("DebuggerMgr").AddComponent<DebuggerMgr>();
             Object.DontDestroyOnLoad(mgr);
             mgr.MaxCount = maxCount;
+
+            //鼠标操作阻断
+            var canvas = mgr.gameObject.AddComponent<UnityEngine.Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 32767;
+            mgr.gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
+            mgr.gameObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            var img = new GameObject("DebuggerImg");
+            img.transform.SetParent(mgr.transform);
+            _imgComp = img.AddComponent<UnityEngine.UI.Image>();
+            _imgComp.color = new Color(1, 1, 1, 0.1f);
+            _imgComp.rectTransform.pivot = new Vector2(0, 1);
+            _imgComp.rectTransform.anchorMin = new Vector2(0, 1);
+            _imgComp.rectTransform.anchorMax = new Vector2(0, 1);
+
             return mgr;
         }
 
@@ -245,17 +263,38 @@ namespace RuntimeDebugger
             GUI.skin = MSkin;
             // GUI.matrix = Matrix4x4.Scale(new Vector3(m_WindowScale, m_WindowScale, 1f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(minScale, minScale, 1f));
+            var rectTr = _imgComp.rectTransform;
+
+            Rect window = _mWindowRect;
 
             if (_mShowFullWindow)
             {
                 string title = $"<b>v {Application.version} b {BundleVersionCode}</b>　　{DateTime.Now}";
                 _mWindowRect = GUILayout.Window(0, _mWindowRect, DrawWindow, title);
+                window = _mWindowRect;
             }
             else
             {
                 _mIconRect = GUILayout.Window(0, _mIconRect, DrawDebuggerWindowIcon,
                     $"<b>v {Application.version} b {BundleVersionCode}</b>");
+                window = _mIconRect;
             }
+
+
+            if (Math.Abs(rectTr.sizeDelta.x - window.width * minScale) > float.Epsilon ||
+                Math.Abs(rectTr.sizeDelta.y - window.height * minScale) > float.Epsilon)
+            {
+                rectTr.sizeDelta =
+                    new Vector2(window.width * minScale, window.height * minScale);
+            }
+
+            if (Math.Abs(rectTr.anchoredPosition.x - window.x * minScale) > float.Epsilon ||
+                Math.Abs(rectTr.anchoredPosition.y - window.y * minScale) > float.Epsilon)
+            {
+                rectTr.anchoredPosition =
+                    new Vector2(window.x * minScale, -window.y * minScale);
+            }
+
 
             GUI.matrix = cachedMatrix;
             GUI.skin = cachedGuiSkin;
