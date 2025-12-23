@@ -57,6 +57,11 @@ namespace RuntimeDebugger
         private CmdWindow _cmdWindow = new CmdWindow();
         public static int BundleVersionCode = -1;
 
+        /// <summary>
+        /// 窗口切换最大化和最小化的回调,参数为true表示最大化,false表示最小化
+        /// </summary>
+        public Action<bool> WindowMinMaxAction;
+
         internal float WindowScale
         {
             get { return _mWindowScale; }
@@ -336,6 +341,8 @@ namespace RuntimeDebugger
             if (toolbarIndex >= debuggerWindowGroup.DebuggerWindowCount)
             {
                 _mShowFullWindow = false;
+                UnityEngine.Debug.Log("切换最小化");
+                WindowMinMaxAction?.Invoke(false);
                 return;
             }
 
@@ -390,6 +397,8 @@ namespace RuntimeDebugger
             if (GUILayout.Button(title, GUILayout.Width(100f), GUILayout.Height(40f)))
             {
                 _mShowFullWindow = true;
+                UnityEngine.Debug.Log("切换全屏");
+                WindowMinMaxAction?.Invoke(true);
             }
         }
 

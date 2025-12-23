@@ -26,12 +26,15 @@ public class SampleStart : MonoBehaviour
             SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
 
             SampleStart.DebugMgr.AddCmd("cmd.removeTest0", "移除test0的按钮",
-                () => { SampleStart.DebugMgr.RemoveCmd("cmd.test0"); },"移除test0的按钮");
+                () => { SampleStart.DebugMgr.RemoveCmd("cmd.test0"); }, "移除test0的按钮");
             SampleStart.DebugMgr.AddCmd("cmd.ReAddTest0", "重新添加test0的按钮",
                 () =>
                 {
                     SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
-                },"重新添加test0的按钮");
+                }, "重新添加test0的按钮");
+
+            //添加窗口最大化最小化回调-用来调整fgui相关触摸开关,避免最大化后操作cmd窗口时触发游戏内操作
+            SampleStart.DebugMgr.WindowMinMaxAction = (isMax) => { Debug.Log("窗口最大化状态改变,是否最大化:" + isMax); };
         }
     }
 }
