@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Events;
 
 // ReSharper disable once CheckNamespace
 namespace RuntimeDebugger
@@ -183,11 +184,27 @@ namespace RuntimeDebugger
 
                     if (GUILayout.Button(_buttons[i].Button))
                     {
-                        GUI.FocusControl("InputCmd");
-                        _inputCmd = _buttons[i].Cmd + " ";
-                        _beForceFindCmd = true;
-                        if (TouchScreenKeyboard.isSupported && _keyboard != null)
-                            _keyboard.text = _inputCmd;
+                        if (_buttons[i].Delegate is UnityAction)
+                        {
+                            GUI.FocusControl("emptyLabel"); //移除焦点到非输入框
+                            _resultMsg = CmdExecute(_buttons[i].Cmd, out var beSuc);
+                            if (beSuc)
+                            {
+                                _inputCmd = "";
+                                if (_keyboard != null)
+                                {
+                                    _keyboard.text = "";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            GUI.FocusControl("InputCmd");
+                            _inputCmd = _buttons[i].Cmd + " ";
+                            _beForceFindCmd = true;
+                            if (TouchScreenKeyboard.isSupported && _keyboard != null)
+                                _keyboard.text = _inputCmd;
+                        }
                     }
                 }
 
@@ -268,7 +285,7 @@ namespace RuntimeDebugger
             }
 
             beSuc = true;
-            return $"{DateTime.Now:MM.dd HH:mm:ss:fff} 执行完成 {cmd}";
+            return $"{DateTime.Now:MM.dd HH:mm:ss:fff} 执行完成 {cmd} - {info.Button}";
         }
 
         /// <summary>
