@@ -60,7 +60,23 @@ namespace RuntimeDebugger
         /// <summary>
         /// 窗口切换最大化和最小化的回调,参数为true表示最大化,false表示最小化
         /// </summary>
-        public Action<bool> WindowMinMaxAction;
+        public Action<Rect> WindowMinMaxAction;
+
+        private Rect _currentWindowRect;
+
+        public Rect CurrentWindowRect
+        {
+            get => _currentWindowRect;
+            private set
+            {
+                if (_currentWindowRect != value)
+                {
+                    _currentWindowRect = value;
+                    
+                    WindowMinMaxAction?.Invoke(_currentWindowRect);
+                }
+            }
+        }
 
         internal float WindowScale
         {
@@ -285,6 +301,7 @@ namespace RuntimeDebugger
                 window = _mIconRect;
             }
 
+            CurrentWindowRect = window;
 
             if (Math.Abs(rectTr.sizeDelta.x - window.width * minScale) > float.Epsilon ||
                 Math.Abs(rectTr.sizeDelta.y - window.height * minScale) > float.Epsilon)
@@ -341,8 +358,6 @@ namespace RuntimeDebugger
             if (toolbarIndex >= debuggerWindowGroup.DebuggerWindowCount)
             {
                 _mShowFullWindow = false;
-                UnityEngine.Debug.Log("切换最小化");
-                WindowMinMaxAction?.Invoke(false);
                 return;
             }
 
@@ -397,8 +412,6 @@ namespace RuntimeDebugger
             if (GUILayout.Button(title, GUILayout.Width(100f), GUILayout.Height(40f)))
             {
                 _mShowFullWindow = true;
-                UnityEngine.Debug.Log("切换全屏");
-                WindowMinMaxAction?.Invoke(true);
             }
         }
 

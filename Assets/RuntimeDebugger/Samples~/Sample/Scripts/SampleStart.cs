@@ -34,7 +34,7 @@ public class SampleStart : MonoBehaviour
                 }, "重新添加test0的按钮");
 
             //添加窗口最大化最小化回调-用来调整fgui相关触摸开关,避免最大化后操作cmd窗口时触发游戏内操作
-            SampleStart.DebugMgr.WindowMinMaxAction = (isMax) => { Debug.Log("窗口最大化状态改变,是否最大化:" + isMax); };
+            SampleStart.DebugMgr.WindowMinMaxAction = (rect) => { Debug.Log("窗口最大化状态改变,是否最大化:" + rect); };
         }
     }
 }
