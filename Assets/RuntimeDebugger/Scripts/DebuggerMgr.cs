@@ -58,22 +58,36 @@ namespace RuntimeDebugger
         public static int BundleVersionCode = -1;
 
         /// <summary>
-        /// 窗口切换最大化和最小化的回调,参数为true表示最大化,false表示最小化
+        /// 窗口
         /// </summary>
-        public Action<Rect> WindowMinMaxAction;
+        public Action<Rect> WindowChangeAction;
+        
+        /// <summary>
+        /// 当前窗口在屏幕坐标系上的位置和大小。
+        /// </summary>
+        public Rect CurrentWindowRectOnScreen { get; private set; }
 
         private Rect _currentWindowRect;
 
-        public Rect CurrentWindowRect
+        private Rect CurrentWindowRect
         {
             get => _currentWindowRect;
-            private set
+            set
             {
                 if (_currentWindowRect != value)
                 {
                     _currentWindowRect = value;
-                    
-                    WindowMinMaxAction?.Invoke(_currentWindowRect);
+                    var minScale = Math.Min(Screen.width / DesignWidth, Screen.height / DesignHeight);
+                    var r = new Rect()
+                    {
+                        x = _currentWindowRect.x * minScale,
+                        y = Screen.height - _currentWindowRect.y * minScale,
+                        width = _currentWindowRect.width * minScale,
+                        height = _currentWindowRect.height * minScale
+                    };
+                    CurrentWindowRectOnScreen = r;
+                    //Debug.Log($"rect {CurrentWindowRect.x*minScale} {CurrentWindowRect.y*minScale} {CurrentWindowRect.width*minScale} {CurrentWindowRect.height*minScale}");
+                    WindowChangeAction?.Invoke(CurrentWindowRectOnScreen);
                 }
             }
         }

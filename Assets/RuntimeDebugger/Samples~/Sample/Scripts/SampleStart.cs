@@ -33,8 +33,11 @@ public class SampleStart : MonoBehaviour
                     SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
                 }, "重新添加test0的按钮");
 
-            //添加窗口最大化最小化回调-用来调整fgui相关触摸开关,避免最大化后操作cmd窗口时触发游戏内操作
-            SampleStart.DebugMgr.WindowMinMaxAction = (rect) => { Debug.Log("窗口最大化状态改变,是否最大化:" + rect); };
+            //添加窗口位置和大小改变的回调,返回的是屏幕坐标
+            SampleStart.DebugMgr.WindowChangeAction = (rect) =>
+            {
+                Debug.Log("窗口位置和大小:" + rect);
+            };
         }
     }
 }
