@@ -10,7 +10,7 @@ namespace RuntimeDebugger
 {
     public class CmdWindow : ScrollableDebuggerWindowBase
     {
-        private const string DefaultGroupName = "default";
+        private const string DefaultGroupName = "默认";
         private const float GroupListWidth = 120f;
         private const float MinGroupListWidth = 72f;
         private const float GroupPanelSpacing = 8f;
@@ -49,6 +49,7 @@ namespace RuntimeDebugger
         private List<CmdInfo> _checkCmdInfos = new List<CmdInfo>();
         private string _selectedGroupName = DefaultGroupName;
         private Vector2 _groupListScrollPosition = Vector2.zero;
+        private Vector2 _btnListScrollPosition = Vector2.zero;
         private Vector2 _hintScrollPosition = Vector2.zero;
         private static GUIStyle _clipWrapLabelStyle;
         private static GUIStyle _hintLabelStyle;
@@ -225,7 +226,7 @@ namespace RuntimeDebugger
         private void DrawGroupList()
         {
             EnsureDefaultGroup();
-            var groupNameLs = _cmdGroupDict.Keys.OrderBy(x => x, StringComparer.Ordinal).ToList();
+            var groupNameLs = _cmdGroupDict.Keys.ToList();
             if (groupNameLs.Remove(DefaultGroupName))
             {
                 groupNameLs.Insert(0, DefaultGroupName);
@@ -270,7 +271,9 @@ namespace RuntimeDebugger
                 GUILayout.Space(GroupPanelSpacing);
                 BeginTransparentPanel(rightContentWidth, contentHeight);
                 {
+                    _btnListScrollPosition = GUILayout.BeginScrollView(_btnListScrollPosition, GUILayout.ExpandHeight(true));
                     DrawGroupCmdButtons(rightContentWidth);
+                    GUILayout.EndScrollView();
                 }
                 EndTransparentPanel();
             }
