@@ -33,11 +33,12 @@ public class SampleStart : MonoBehaviour
                     SampleStart.DebugMgr.AddCmd("cmd.test0", "测试指令 无参数", () => { Debug.Log("测试指令覆盖 被触发"); }, "测试指令覆盖");
                 }, "重新添加test0的按钮");
 
+
+            SampleStart.DebugMgr.AddCmd($"cmd.testGroup11", "测试分组指令 无参数", () => { Debug.Log("测试分组指令 被触发1"); }, "测试分组指令11", $"TestGroup1");
+            SampleStart.DebugMgr.AddCmd($"cmd.testGroup22", "测试分组指令 int:数量", (string arg0) => { Debug.Log($"测试分组指令 被触发22  {arg0}"); }, "测试分组指令22", $"TestGroup1");
+
             //添加窗口位置和大小改变的回调,返回的是屏幕坐标
-            SampleStart.DebugMgr.WindowChangeAction = (rect) =>
-            {
-                Debug.Log("窗口位置和大小:" + rect);
-            };
+            SampleStart.DebugMgr.WindowChangeAction = (rect) => { Debug.Log("窗口位置和大小:" + rect); };
         }
     }
 }

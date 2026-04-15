@@ -579,9 +579,10 @@ namespace RuntimeDebugger
         /// <param name="msg">显示在代码提示的提示文字,一般为命令用途和参数意义</param>
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
-        public void AddCmd(string cmd, string msg, UnityAction action, string button = "")
+        /// <param name="groupName">分组名称 不填为默认分组</param>
+        public void AddCmd(string cmd, string msg, UnityAction action, string button = "", string groupName = null)
         {
-            _cmdWindow.AddCmd(cmd, msg, action, button);
+            _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
 
         /// <summary>
@@ -591,9 +592,10 @@ namespace RuntimeDebugger
         /// <param name="msg">显示在代码提示的提示文字,一般为命令用途和参数意义</param>
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string> action, string button = "")
+        /// <param name="groupName">分组名称 不填为默认分组</param>
+        public void AddCmd(string cmd, string msg, UnityAction<string> action, string button = "", string groupName = null)
         {
-            _cmdWindow.AddCmd(cmd, msg, action, button);
+            _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
 
         /// <summary>
@@ -603,9 +605,10 @@ namespace RuntimeDebugger
         /// <param name="msg">显示在代码提示的提示文字,一般为命令用途和参数意义</param>
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string, string> action, string button = "")
+        /// <param name="groupName">分组名称 不填为默认分组</param>
+        public void AddCmd(string cmd, string msg, UnityAction<string, string> action, string button = "", string groupName = null)
         {
-            _cmdWindow.AddCmd(cmd, msg, action, button);
+            _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
 
         /// <summary>
@@ -615,9 +618,10 @@ namespace RuntimeDebugger
         /// <param name="msg">显示在代码提示的提示文字,一般为命令用途和参数意义</param>
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string, string, string> action, string button = "")
+        /// <param name="groupName">分组名称 不填为默认分组</param>
+        public void AddCmd(string cmd, string msg, UnityAction<string, string, string> action, string button = "", string groupName = null)
         {
-            _cmdWindow.AddCmd(cmd, msg, action, button);
+            _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
 
         /// <summary>
@@ -627,10 +631,11 @@ namespace RuntimeDebugger
         /// <param name="msg">显示在代码提示的提示文字,一般为命令用途和参数意义</param>
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
+        /// <param name="groupName">分组名称 不填为默认分组</param>
         public void AddCmd(string cmd, string msg, UnityAction<string, string, string, string> action,
-            string button = "")
+            string button = "", string groupName = null)
         {
-            _cmdWindow.AddCmd(cmd, msg, action, button);
+            _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
 
         /// <summary>

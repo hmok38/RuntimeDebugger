@@ -7,6 +7,7 @@ namespace RuntimeDebugger
         protected DebuggerMgr m_DebuggerComponent = null;
         private const float TitleWidth = 240f;
         private Vector2 m_ScrollPosition = Vector2.zero;
+        protected virtual bool UseOuterScrollView => true;
 
         public virtual void Initialize(DebuggerMgr mgr, params object[] args)
         {
@@ -36,11 +37,17 @@ namespace RuntimeDebugger
 
         public void OnDraw()
         {
-            m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition);
+            if (UseOuterScrollView)
             {
-                OnDrawScrollableWindow();
+                m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition);
+                {
+                    OnDrawScrollableWindow();
+                }
+                GUILayout.EndScrollView();
+                return;
             }
-            GUILayout.EndScrollView();
+
+            OnDrawScrollableWindow();
         }
 
         protected abstract void OnDrawScrollableWindow();
