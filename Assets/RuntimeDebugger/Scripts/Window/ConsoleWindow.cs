@@ -15,6 +15,14 @@ namespace RuntimeDebugger
         private readonly List<LogNode> _mFilterLogNodesList = new List<LogNode>(1000);
         private readonly LogNode _mFilterLogNodes = new LogNode();
         private LogNode _mFilterCurLogNodes;
+        /// <summary>
+        /// 保存日志节点倍率, 最大显示日志数量 * OutputLogNodeRate
+        /// </summary>
+        private readonly int OutputLogNodeRate = 10;
+        /// <summary>
+        /// 超出显示数量其他的日志节点
+        /// </summary>
+        private readonly Queue<LogNode> mOutputLogNodes = new Queue<LogNode>(1024);
 
 
         private Vector2 _mLogScrollPosition, _mStackScrollPosition = Vector2.zero;
@@ -611,25 +619,39 @@ namespace RuntimeDebugger
 
         public void ExportLog()
         {
-            var str = "";
+            _sb.Clear();
+            while (mOutputLogNodes.Count > 0)
+            {
+                var node = mOutputLogNodes.Dequeue();
+                _sb.AppendLine($"UTC {node.LogTime}");
+                _sb.AppendLine(node.LogMessage);
+                _sb.AppendLine(node.StackTrack);
+                _sb.AppendLine();
+            }
+            
             LogNode logNode = _mLogNodes.Next;
             while (logNode != null)
             {
-                str += $"UTC {logNode.LogTime}\n{logNode.LogMessage}\n{logNode.StackTrack}\n\n";
+                _sb.AppendLine($"UTC {logNode.LogTime}");
+                _sb.AppendLine(logNode.LogMessage);
+                _sb.AppendLine(logNode.StackTrack);
+                _sb.AppendLine();
                 logNode = logNode.Next;
             }
 
-            var path = Application.persistentDataPath + "/logs.txt";
+            var path = Application.persistentDataPath + $"/logs-{DateTime.Now:yyyyMMddHHmm}.txt";
             if (File.Exists(path))
             {
                 File.Delete(path);
             }
-
+            
+            var str = _sb.ToString();
             var file = File.Create(path);
             var ar = Encoding.UTF8.GetBytes(str);
             file.Write(ar, 0, ar.Length);
             file.Close();
             GUIUtility.systemCopyBuffer = str;
+            Debug.Log($"导出日志到: {path}");
         }
 
         private void Clear()
@@ -646,6 +668,7 @@ namespace RuntimeDebugger
             _mFilterLogNodesList.Clear();
             _mFilterLogNodes.Clear();
             _mFilterCurLogNodes = null;
+            mOutputLogNodes.Clear();
         }
 
         public void RefreshCount()
@@ -735,6 +758,11 @@ namespace RuntimeDebugger
             if (_mLogNodes.Size >= _mMaxLine)
             {
                 node = _mLogNodes.Next;
+                //超出显示上限，将头节点日志保存到OutputLogs
+                if (mOutputLogNodes.Count >= _mMaxLine * OutputLogNodeRate - _mMaxLine)
+                    mOutputLogNodes.Dequeue();//丢弃最早的消息节点
+                mOutputLogNodes.Enqueue(LogNode.Create(node.LogType, node.LogMessage, node.StackTrack));
+                
                 _mLogNodes.Next = node.Next;
                 node.Next.Pre = _mLogNodes;
                 node.Reset(logType, logMessage, stackTrace);
