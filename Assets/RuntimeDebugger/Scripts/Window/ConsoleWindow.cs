@@ -19,7 +19,7 @@ namespace RuntimeDebugger
         /// <summary>
         /// 保存日志节点倍率, 最大显示日志数量 * OutputLogNodeRate
         /// </summary>
-        private int _outputLogNodeRate = 1;
+        private int _outputLogNodeRate = 10;
         /// <summary>
         /// 超出显示数量其他的日志节点
         /// </summary>
