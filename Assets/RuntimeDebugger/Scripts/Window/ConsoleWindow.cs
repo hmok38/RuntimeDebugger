@@ -19,7 +19,7 @@ namespace RuntimeDebugger
         /// <summary>
         /// 保存日志节点倍率, 最大显示日志数量 * OutputLogNodeRate
         /// </summary>
-        private readonly int OutputLogNodeRate = 10;
+        private int _outputLogNodeRate = 10;
         /// <summary>
         /// 超出显示数量其他的日志节点
         /// </summary>
@@ -88,7 +88,13 @@ namespace RuntimeDebugger
             get => _mMaxLine;
             set => _mMaxLine = value;
         }
-
+    
+        public int OutputLogNodeRate
+        {
+            get => _outputLogNodeRate;
+            set => _outputLogNodeRate = value;
+        }
+        
         public bool InfoFilter
         {
             get => _mInfoFilter;
@@ -625,7 +631,7 @@ namespace RuntimeDebugger
             for (int i = 0; i < outputNodes.Length; i++)
             {
                 var node = outputNodes[i];
-                _sb.AppendLine($"UTC {node.LogTime}");
+                _sb.AppendLine($"UTC {node.LogTime.ToString("yyyyMMdd HH:mm:ss:fff")}");
                 _sb.AppendLine(node.LogMessage);
                 _sb.AppendLine(node.StackTrack);
                 _sb.AppendLine();

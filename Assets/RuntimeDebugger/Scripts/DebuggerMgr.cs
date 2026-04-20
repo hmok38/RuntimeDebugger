@@ -36,7 +36,31 @@ namespace RuntimeDebugger
         internal static readonly Rect DefaultWindowRect =
             new Rect(DefaultWindowPadding, DefaultWindowPadding, 240f, 280f);
 
-        [NonSerialized] public int MaxCount = 300;
+        /// <summary>
+        /// 日志最大行数,超过这个数量会删除之前的日志,默认300,可以在外部设置,也可以在Application.persistentDataPath,中创建 "logsetting.txt"文件,内容为 "LogMaxCount=100"来设置,如果同时设置了两者,以代码设置的为准
+        /// </summary>
+        public int MaxCount
+        {
+            get => _mConsoleWindow.MaxLine;
+            set
+            {
+                if(_fileEditMaxCount) return;
+                _mConsoleWindow.MaxLine = value;
+            }
+        }
+
+        private static bool _fileEditMaxCount;
+
+        /// <summary>
+        /// 导出日志的数量倍率,最大导出的日志数量为MaxCount*OutputLogNodeRate,默认10
+        /// </summary>
+
+        public int OutputLogNodeRate
+        {
+            get => _mConsoleWindow.OutputLogNodeRate;
+            set => _mConsoleWindow.OutputLogNodeRate = value;
+        }
+
         private readonly string _skinPath = "DebuggerSkin";
         private float _mWindowScale = DefaultWindowScale;
         [NonSerialized] public float MWindowWidth = DefaultWindowRect.width;
@@ -61,7 +85,7 @@ namespace RuntimeDebugger
         /// 窗口
         /// </summary>
         public Action<Rect> WindowChangeAction;
-        
+
         /// <summary>
         /// 当前窗口在屏幕坐标系上的位置和大小。
         /// </summary>
@@ -185,7 +209,7 @@ namespace RuntimeDebugger
         {
             BundleVersionCode = GetVersionCode();
             bool beCreat = false;
-            int maxCount = 300;
+            int maxCount = 0;
             string filePath = Path.Combine(Application.persistentDataPath, "logsetting.txt");
 
             if (File.Exists(filePath))
@@ -224,7 +248,11 @@ namespace RuntimeDebugger
 
             var mgr = new GameObject("DebuggerMgr").AddComponent<DebuggerMgr>();
             Object.DontDestroyOnLoad(mgr);
-            mgr.MaxCount = maxCount;
+            if (maxCount > 0)//文件中设置了值-优先级最高
+            {
+                mgr.MaxCount = maxCount;
+                _fileEditMaxCount = true;//如果文件中设置了值,则不允许外部再设置了,以免覆盖文件中的设置
+            }
 
             //鼠标操作阻断
             var canvas = mgr.gameObject.AddComponent<UnityEngine.Canvas>();
@@ -276,10 +304,7 @@ namespace RuntimeDebugger
             _mIconRect = LimitWindowPos(_mIconRect);
         }
 
-        private void Start()
-        {
-            _mConsoleWindow.MaxLine = this.MaxCount;
-        }
+      
 
         private void Update()
         {
@@ -593,7 +618,8 @@ namespace RuntimeDebugger
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
         /// <param name="groupName">分组名称 不填为默认分组</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string> action, string button = "", string groupName = null)
+        public void AddCmd(string cmd, string msg, UnityAction<string> action, string button = "",
+            string groupName = null)
         {
             _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
@@ -606,7 +632,8 @@ namespace RuntimeDebugger
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
         /// <param name="groupName">分组名称 不填为默认分组</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string, string> action, string button = "", string groupName = null)
+        public void AddCmd(string cmd, string msg, UnityAction<string, string> action, string button = "",
+            string groupName = null)
         {
             _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
@@ -619,7 +646,8 @@ namespace RuntimeDebugger
         /// <param name="action">当被执行时的回调</param>
         /// <param name="button">设置的话会生成一个按钮,方便快捷输入,按钮显示的值</param>
         /// <param name="groupName">分组名称 不填为默认分组</param>
-        public void AddCmd(string cmd, string msg, UnityAction<string, string, string> action, string button = "", string groupName = null)
+        public void AddCmd(string cmd, string msg, UnityAction<string, string, string> action, string button = "",
+            string groupName = null)
         {
             _cmdWindow.AddCmd(cmd, msg, action, button, groupName);
         }
