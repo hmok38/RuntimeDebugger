@@ -19,7 +19,7 @@ namespace RuntimeDebugger
         /// <summary>
         /// 保存日志节点倍率, 最大显示日志数量 * OutputLogNodeRate
         /// </summary>
-        private int _outputLogNodeRate = 10;
+        private int _outputLogNodeRate = 1;
         /// <summary>
         /// 超出显示数量其他的日志节点
         /// </summary>
@@ -613,6 +613,8 @@ namespace RuntimeDebugger
 
             if (!beFilter && _reg.IsMatch(checkTargetNode.LogMessage))
             {
+                if(_mFilterLogNodesList.Count >= MaxLine)
+                    _mFilterLogNodesList.RemoveAt(0);
                 _mFilterLogNodesList.Add(checkTargetNode);
                 filterNode.FilterNext = checkTargetNode;
                 checkTargetNode.FilterNext = null;
