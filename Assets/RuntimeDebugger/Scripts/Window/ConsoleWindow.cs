@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -620,24 +621,15 @@ namespace RuntimeDebugger
         public void ExportLog()
         {
             _sb.Clear();
-            while (mOutputLogNodes.Count > 0)
+            var outputNodes = mOutputLogNodes.ToArray();
+            for (int i = 0; i < outputNodes.Length; i++)
             {
-                var node = mOutputLogNodes.Dequeue();
+                var node = outputNodes[i];
                 _sb.AppendLine($"UTC {node.LogTime}");
                 _sb.AppendLine(node.LogMessage);
                 _sb.AppendLine(node.StackTrack);
                 _sb.AppendLine();
-            }
-            
-            LogNode logNode = _mLogNodes.Next;
-            while (logNode != null)
-            {
-                _sb.AppendLine($"UTC {logNode.LogTime}");
-                _sb.AppendLine(logNode.LogMessage);
-                _sb.AppendLine(logNode.StackTrack);
-                _sb.AppendLine();
-                logNode = logNode.Next;
-            }
+            }            
 
             var path = Application.persistentDataPath + $"/logs-{DateTime.Now:yyyyMMddHHmm}.txt";
             if (File.Exists(path))
@@ -758,11 +750,6 @@ namespace RuntimeDebugger
             if (_mLogNodes.Size >= _mMaxLine)
             {
                 node = _mLogNodes.Next;
-                //超出显示上限，将头节点日志保存到OutputLogs
-                if (mOutputLogNodes.Count >= _mMaxLine * OutputLogNodeRate - _mMaxLine)
-                    mOutputLogNodes.Dequeue();//丢弃最早的消息节点
-                mOutputLogNodes.Enqueue(LogNode.Create(node.LogType, node.LogMessage, node.StackTrack));
-                
                 _mLogNodes.Next = node.Next;
                 node.Next.Pre = _mLogNodes;
                 node.Reset(logType, logMessage, stackTrace);
@@ -791,6 +778,11 @@ namespace RuntimeDebugger
                 LogNode curFilterNode = _mFilterCurLogNodes == null ? _mFilterLogNodes : _mFilterCurLogNodes;
                 CheckFilterNode(curFilterNode, node);
             }
+            //添加到导出日志队列
+            //超出显示上限，将头节点日志保存到OutputLogs
+            if (mOutputLogNodes.Count >= _mMaxLine * OutputLogNodeRate)
+                mOutputLogNodes.Dequeue();//丢弃最早的消息节点
+            mOutputLogNodes.Enqueue(LogNode.Create(node.LogType, node.LogMessage, node.StackTrack));
         }
 
 
