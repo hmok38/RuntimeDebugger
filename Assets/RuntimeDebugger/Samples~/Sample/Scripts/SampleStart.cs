@@ -39,6 +39,20 @@ public class SampleStart : MonoBehaviour
 
             //添加窗口位置和大小改变的回调,返回的是屏幕坐标
             SampleStart.DebugMgr.WindowChangeAction = (rect) => { Debug.Log("窗口位置和大小:" + rect); };
+            SampleStart.DebugMgr.AddCmd($"cmd.testConsole", "测试控制台指令  int:输出次数", (count) =>
+            {
+                if(!int.TryParse(count,out int UPPER))
+                {
+                    Debug.Log($"测试控制台指令 被触发 参数错误:{count}");
+                    return;
+                  
+                }
+                for (int i = 0; i < UPPER; i++)
+                {
+                    Debug.Log($"测试控制台指令 被触发 输出:{i}");
+                }
+                
+            }, "测试控制台指令", null);
         }
     }
 }

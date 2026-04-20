@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -15,6 +16,14 @@ namespace RuntimeDebugger
         private readonly List<LogNode> _mFilterLogNodesList = new List<LogNode>(1000);
         private readonly LogNode _mFilterLogNodes = new LogNode();
         private LogNode _mFilterCurLogNodes;
+        /// <summary>
+        /// 保存日志节点倍率, 最大显示日志数量 * OutputLogNodeRate
+        /// </summary>
+        private int _outputLogNodeRate = 10;
+        /// <summary>
+        /// 超出显示数量其他的日志节点
+        /// </summary>
+        private readonly Queue<LogNode> mOutputLogNodes = new Queue<LogNode>(1024);
 
 
         private Vector2 _mLogScrollPosition, _mStackScrollPosition = Vector2.zero;
@@ -79,7 +88,13 @@ namespace RuntimeDebugger
             get => _mMaxLine;
             set => _mMaxLine = value;
         }
-
+    
+        public int OutputLogNodeRate
+        {
+            get => _outputLogNodeRate;
+            set => _outputLogNodeRate = value;
+        }
+        
         public bool InfoFilter
         {
             get => _mInfoFilter;
@@ -598,6 +613,8 @@ namespace RuntimeDebugger
 
             if (!beFilter && _reg.IsMatch(checkTargetNode.LogMessage))
             {
+                if(_mFilterLogNodesList.Count >= MaxLine)
+                    _mFilterLogNodesList.RemoveAt(0);
                 _mFilterLogNodesList.Add(checkTargetNode);
                 filterNode.FilterNext = checkTargetNode;
                 checkTargetNode.FilterNext = null;
@@ -611,25 +628,30 @@ namespace RuntimeDebugger
 
         public void ExportLog()
         {
-            var str = "";
-            LogNode logNode = _mLogNodes.Next;
-            while (logNode != null)
+            _sb.Clear();
+            var outputNodes = mOutputLogNodes.ToArray();
+            for (int i = 0; i < outputNodes.Length; i++)
             {
-                str += $"UTC {logNode.LogTime}\n{logNode.LogMessage}\n{logNode.StackTrack}\n\n";
-                logNode = logNode.Next;
-            }
+                var node = outputNodes[i];
+                _sb.AppendLine($"UTC {node.LogTime.ToString("yyyyMMdd HH:mm:ss:fff")}");
+                _sb.AppendLine(node.LogMessage);
+                _sb.AppendLine(node.StackTrack);
+                _sb.AppendLine();
+            }            
 
-            var path = Application.persistentDataPath + "/logs.txt";
+            var path = Application.persistentDataPath + $"/logs-{DateTime.Now:yyyyMMddHHmm}.txt";
             if (File.Exists(path))
             {
                 File.Delete(path);
             }
-
+            
+            var str = _sb.ToString();
             var file = File.Create(path);
             var ar = Encoding.UTF8.GetBytes(str);
             file.Write(ar, 0, ar.Length);
             file.Close();
             GUIUtility.systemCopyBuffer = str;
+            Debug.Log($"导出日志到: {path}");
         }
 
         private void Clear()
@@ -646,6 +668,7 @@ namespace RuntimeDebugger
             _mFilterLogNodesList.Clear();
             _mFilterLogNodes.Clear();
             _mFilterCurLogNodes = null;
+            mOutputLogNodes.Clear();
         }
 
         public void RefreshCount()
@@ -763,6 +786,11 @@ namespace RuntimeDebugger
                 LogNode curFilterNode = _mFilterCurLogNodes == null ? _mFilterLogNodes : _mFilterCurLogNodes;
                 CheckFilterNode(curFilterNode, node);
             }
+            //添加到导出日志队列
+            //超出显示上限，将头节点日志保存到OutputLogs
+            if (mOutputLogNodes.Count >= _mMaxLine * OutputLogNodeRate)
+                mOutputLogNodes.Dequeue();//丢弃最早的消息节点
+            mOutputLogNodes.Enqueue(LogNode.Create(node.LogType, node.LogMessage, node.StackTrack));
         }
 
 
