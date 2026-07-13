@@ -82,34 +82,7 @@ namespace RuntimeDebugger
 
         private bool _beForceFindCmd;
         private string _passwordMsg;
-        private bool _hasFocus;
-        private TouchScreenKeyboard _keyboard;
         protected override bool UseOuterScrollView => false;
-
-        private void SetTouchScreenKeyBoard(string focusedControlName)
-        {
-            if (TouchScreenKeyboard.isSupported && Event.current.type == EventType.Repaint)
-            {
-                bool currentFocus = GUI.GetNameOfFocusedControl() == focusedControlName; //InputCmd
-
-                if (currentFocus && !_hasFocus) //获得焦点就创建一个新的
-                {
-                    if (_keyboard == null || !_keyboard.active)
-                    {
-                        _keyboard = TouchScreenKeyboard.Open(_inputCmd, TouchScreenKeyboardType.Default);
-                    }
-                }
-                else if (!currentFocus && _hasFocus)
-                {
-                    if (_keyboard != null && _keyboard.active)
-                    {
-                        _keyboard.active = false;
-                    }
-                }
-
-                _hasFocus = currentFocus;
-            }
-        }
 
         protected override void OnDrawScrollableWindow()
         {
@@ -120,14 +93,7 @@ namespace RuntimeDebugger
             {
                 GUI.SetNextControlName("PasswordTextField");
                 _inputPassword = GUILayout.TextField(_inputPassword);
-
-                SetTouchScreenKeyBoard("PasswordTextField");
-
-                if (TouchScreenKeyboard.isSupported && _keyboard != null)
-                {
-                    //根据软键盘赋值
-                    _inputPassword = _keyboard.text;
-                }
+                _inputPassword = InputHelper.SyncFromFocusChange("PasswordTextField", _inputPassword);
 
                 if (GUILayout.Button("输入密码解锁Cmd"))
                 {
@@ -135,12 +101,8 @@ namespace RuntimeDebugger
                     {
                         _beOpenCmd = true;
                         GUI.FocusControl("emptyLabel"); //移除焦点
-                        if (_keyboard != null)
-                        {
-                            _keyboard.active = false;
-                            _keyboard.text = "";
-                            _hasFocus = false;
-                        }
+                        InputHelper.HideKeyboard();
+                        InputHelper.SetText("");
                     }
                     else
                     {
@@ -155,11 +117,7 @@ namespace RuntimeDebugger
                 GUILayout.BeginHorizontal();
                 GUI.SetNextControlName("InputCmd");
                 var cmd = GUILayout.TextField(_inputCmd);
-                SetTouchScreenKeyBoard("InputCmd");
-                if (TouchScreenKeyboard.isSupported && _keyboard != null)
-                {
-                    cmd = _keyboard.text;
-                }
+                cmd = InputHelper.SyncFromFocusChange("InputCmd", cmd);
 
                 if (!string.IsNullOrEmpty(cmd))
                 {
@@ -192,10 +150,7 @@ namespace RuntimeDebugger
                     if (beSuc)
                     {
                         _inputCmd = "";
-                        if (_keyboard != null)
-                        {
-                            _keyboard.text = "";
-                        }
+                        InputHelper.SetText("");
                     }
                 }
 
@@ -213,6 +168,10 @@ namespace RuntimeDebugger
                 else if (!string.IsNullOrEmpty(cmd))
                 {
                     GUILayout.Label($"<color=#ff0000>没有这个指令: {cmd}</color>", GetHintLabelStyle());
+                }
+                else
+                {
+                    GUILayout.Label("", GUILayout.Height(0));
                 }
 
                 GUILayout.FlexibleSpace();
@@ -433,10 +392,7 @@ namespace RuntimeDebugger
                         if (beSuc)
                         {
                             _inputCmd = "";
-                            if (_keyboard != null)
-                            {
-                                _keyboard.text = "";
-                            }
+                            InputHelper.SetText("");
                         }
                     }
                     else
@@ -444,10 +400,7 @@ namespace RuntimeDebugger
                         GUI.FocusControl("InputCmd");
                         _inputCmd = cmdInfo.Cmd + " ";
                         _beForceFindCmd = true;
-                        if (TouchScreenKeyboard.isSupported && _keyboard != null)
-                        {
-                            _keyboard.text = _inputCmd;
-                        }
+                        InputHelper.SetText(_inputCmd);
                     }
                 }
 

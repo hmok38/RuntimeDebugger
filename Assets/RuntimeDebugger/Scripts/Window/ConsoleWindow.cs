@@ -282,7 +282,9 @@ namespace RuntimeDebugger
 
             GUILayout.BeginHorizontal();
             {
+                GUI.SetNextControlName("ConsoleSearchField");
                 _searchString = GUILayout.TextField(_searchString);
+                _searchString = InputHelper.SyncFromFocusChange("ConsoleSearchField", _searchString);
                 if (!_oldString.Equals(_searchString))
                 {
                     OnSearchStringChange();

@@ -611,6 +611,52 @@ namespace RuntimeDebugger
         }
 
         /// <summary>
+        /// 设置自定义键盘输入回调（用于微信小游戏等特殊平台）。
+        /// 调用后，当文本输入框获得焦点时将优先使用外部键盘而非 Unity TouchScreenKeyboard。
+        ///
+        /// 微信小游戏对接示例：
+        /// <code>
+        /// // 维护本地文本缓冲区，三个回调均更新以兼顾实时同步与兜底
+        /// string wxText = "";
+        ///
+        /// debugger.SetCustomInput(
+        ///     isSupported:        () => IsWeChatMiniGame(),
+        ///     onShowKeyboard:     (text) => { wxText = text;
+        ///                                      WX.ShowKeyboard(text); },
+        ///     onHideKeyboard:     () => WX.HideKeyboard(),
+        ///     onGetKeyboardText:  () => wxText,
+        ///     onSetKeyboardText:  (text) => { wxText = text;
+        ///                                      WX.UpdateKeyboard(text); }
+        /// );
+        /// </code>
+        /// 其中 WX.ShowKeyboard 对应 wx.showKeyboard({ defaultValue }),
+        /// WX.UpdateKeyboard 对应 wx.updateKeyboard({ value }),
+        /// WX.HideKeyboard 对应 wx.hideKeyboard()。
+        /// wxText 缓冲区需同时监听三个微信回调以兼顾实时同步与兜底：
+        ///   wx.onKeyboardInput(res    => wxText = res.value)   // 实时同步显示
+        ///   wx.onKeyboardConfirm(res  => wxText = res.value)   // 确认兜底
+        ///   wx.onKeyboardComplete(res => wxText = res.value)   // 收起兜底
+        /// </summary>
+        /// <param name="isSupported">判断是否使用外部键盘</param>
+        /// <param name="onShowKeyboard">显示键盘，参数为初始文本</param>
+        /// <param name="onHideKeyboard">隐藏键盘</param>
+        /// <param name="onGetKeyboardText">获取键盘当前文本</param>
+        /// <param name="onSetKeyboardText">程序化设置键盘文本</param>
+        public void SetCustomInput(
+            System.Func<bool> isSupported,
+            System.Action<string> onShowKeyboard,
+            System.Action onHideKeyboard,
+            System.Func<string> onGetKeyboardText,
+            System.Action<string> onSetKeyboardText)
+        {
+            InputHelper.IsExternalKeyboardSupported = isSupported;
+            InputHelper.OnShowKeyboard = onShowKeyboard;
+            InputHelper.OnHideKeyboard = onHideKeyboard;
+            InputHelper.OnGetKeyboardText = onGetKeyboardText;
+            InputHelper.OnSetKeyboardText = onSetKeyboardText;
+        }
+
+        /// <summary>
         /// 设置cmd界面的password
         /// </summary>
         /// <param name="password"></param>
