@@ -44,7 +44,7 @@ namespace RuntimeDebugger
             get => _mConsoleWindow.MaxLine;
             set
             {
-                if(_fileEditMaxCount) return;
+                if (_fileEditMaxCount) return;
                 _mConsoleWindow.MaxLine = value;
             }
         }
@@ -205,7 +205,14 @@ namespace RuntimeDebugger
 
         private static Image _imgComp;
 
-        public static DebuggerMgr Init(bool beForceCreat = false)
+        /// <summary>
+        /// 初始化debugMgr,如果发现在某些平台或者语音环境下,文字丢失,请传入游戏使用的中文font,
+        /// </summary>
+        /// <param name="beForceCreat"></param>
+        /// <param name="font"></param>
+        /// <param name="fontSize"></param>
+        /// <returns></returns>
+        public static DebuggerMgr Init(bool beForceCreat = false, Font font = null, int fontSize = 12)
         {
             BundleVersionCode = GetVersionCode();
             bool beCreat = false;
@@ -247,11 +254,16 @@ namespace RuntimeDebugger
             }
 
             var mgr = new GameObject("DebuggerMgr").AddComponent<DebuggerMgr>();
+            if (font != null)
+            {
+                mgr.SetSKinFont(font, fontSize);
+            }
+
             Object.DontDestroyOnLoad(mgr);
-            if (maxCount > 0)//文件中设置了值-优先级最高
+            if (maxCount > 0) //文件中设置了值-优先级最高
             {
                 mgr.MaxCount = maxCount;
-                _fileEditMaxCount = true;//如果文件中设置了值,则不允许外部再设置了,以免覆盖文件中的设置
+                _fileEditMaxCount = true; //如果文件中设置了值,则不允许外部再设置了,以免覆盖文件中的设置
             }
 
             //鼠标操作阻断
@@ -269,6 +281,17 @@ namespace RuntimeDebugger
             _imgComp.rectTransform.anchorMax = new Vector2(0, 1);
 
             return mgr;
+        }
+
+        private void SetSKinFont(Font font, int fontSize = 12)
+        {
+            MSkin.font = font;
+            MSkin.box.fontSize = fontSize;
+            MSkin.button.fontSize = fontSize;
+            MSkin.label.fontSize = fontSize;
+            MSkin.button.fontSize = fontSize;
+            MSkin.textArea.fontSize = fontSize;
+            MSkin.textField.fontSize = fontSize;
         }
 
         protected void Awake()
@@ -304,7 +327,6 @@ namespace RuntimeDebugger
             _mIconRect = LimitWindowPos(_mIconRect);
         }
 
-      
 
         private void Update()
         {
