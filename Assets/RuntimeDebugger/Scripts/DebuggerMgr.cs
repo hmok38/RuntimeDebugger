@@ -614,28 +614,53 @@ namespace RuntimeDebugger
         /// 设置自定义键盘输入回调（用于微信小游戏等特殊平台）。
         /// 调用后，当文本输入框获得焦点时将优先使用外部键盘而非 Unity TouchScreenKeyboard。
         ///
-        /// 微信小游戏对接示例：
+        /// 微信小游戏对接示例（参考 WX SDK 官方 WXInputFieldAdapter）：
         /// <code>
-        /// // 维护本地文本缓冲区，三个回调均更新以兼顾实时同步与兜底
         /// string wxText = "";
+        ///
+        /// void OnInput(OnKeyboardInputListenerResult v)
+        /// {
+        ///     wxText = v.value;
+        /// }
+        /// void OnConfirm(OnKeyboardInputListenerResult v)
+        /// {
+        ///     wxText = v.value;
+        ///     debugger.NotifyKeyboardDismissed();  // ★ 必须，否则下次点击无法弹出键盘
+        /// }
+        /// void OnComplete(OnKeyboardInputListenerResult v)
+        /// {
+        ///     wxText = v.value;
+        ///     debugger.NotifyKeyboardDismissed();  // ★ 必须，否则下次点击无法弹出键盘
+        /// }
         ///
         /// debugger.SetCustomInput(
         ///     isSupported:        () => IsWeChatMiniGame(),
-        ///     onShowKeyboard:     (text) => { wxText = text;
-        ///                                      WX.ShowKeyboard(text); },
-        ///     onHideKeyboard:     () => WX.HideKeyboard(),
+        ///     onShowKeyboard:     (text) => {
+        ///         wxText = text;
+        ///         WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
+        ///         WX.OnKeyboardInput(OnInput);
+        ///         WX.OnKeyboardConfirm(OnConfirm);
+        ///         WX.OnKeyboardComplete(OnComplete);
+        ///     },
+        ///     onHideKeyboard:     () => {
+        ///         WX.OffKeyboardInput(OnInput);
+        ///         WX.OffKeyboardConfirm(OnConfirm);
+        ///         WX.OffKeyboardComplete(OnComplete);
+        ///         WX.HideKeyboard(new HideKeyboardOption());
+        ///     },
         ///     onGetKeyboardText:  () => wxText,
-        ///     onSetKeyboardText:  (text) => { wxText = text;
-        ///                                      WX.UpdateKeyboard(text); }
+        ///     onSetKeyboardText:  (text) => {
+        ///         wxText = text;
+        ///         WX.UpdateKeyboard(new UpdateKeyboardOption { value = text });
+        ///     }
         /// );
         /// </code>
-        /// 其中 WX.ShowKeyboard 对应 wx.showKeyboard({ defaultValue }),
-        /// WX.UpdateKeyboard 对应 wx.updateKeyboard({ value }),
-        /// WX.HideKeyboard 对应 wx.hideKeyboard()。
-        /// wxText 缓冲区需同时监听三个微信回调以兼顾实时同步与兜底：
-        ///   wx.onKeyboardInput(res    => wxText = res.value)   // 实时同步显示
-        ///   wx.onKeyboardConfirm(res  => wxText = res.value)   // 确认兜底
-        ///   wx.onKeyboardComplete(res => wxText = res.value)   // 收起兜底
+        /// 关键点：
+        /// - Show 时绑定 OnKeyboardInput/Confirm/Complete，Hide 时解绑 Off*
+        /// - OnInput 用于实时同步显示，OnConfirm/OnComplete 用于兜底
+        /// - ★ OnConfirm/OnComplete 中必须调用 debugger.NotifyKeyboardDismissed()，
+        ///   否则用户点"完成"关闭键盘后，再次点击输入框无法弹出键盘
+        /// - onSetKeyboardText 通过 wx.updateKeyboard({ value }) 程序化修改键盘文本
         /// </summary>
         /// <param name="isSupported">判断是否使用外部键盘</param>
         /// <param name="onShowKeyboard">显示键盘，参数为初始文本</param>
@@ -654,6 +679,15 @@ namespace RuntimeDebugger
             InputHelper.OnHideKeyboard = onHideKeyboard;
             InputHelper.OnGetKeyboardText = onGetKeyboardText;
             InputHelper.OnSetKeyboardText = onSetKeyboardText;
+        }
+
+        /// <summary>
+        /// 通知调试器外部键盘已被用户关闭（如微信 OnKeyboardConfirm / OnKeyboardComplete）。
+        /// 必须在微信回调中调用，否则用户点"完成"后再次点击输入框无法弹出键盘。
+        /// </summary>
+        public void NotifyKeyboardDismissed()
+        {
+            InputHelper.NotifyExternalDismissed();
         }
 
         /// <summary>

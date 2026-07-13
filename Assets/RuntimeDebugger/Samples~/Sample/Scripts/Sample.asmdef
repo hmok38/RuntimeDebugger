@@ -2,7 +2,8 @@
     "name": "Sample",
     "rootNamespace": "",
     "references": [
-        "RuntimeDebugger"
+        "RuntimeDebugger",
+        "Wx"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

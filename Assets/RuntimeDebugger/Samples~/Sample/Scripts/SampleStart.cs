@@ -1,6 +1,9 @@
 using System;
 using RuntimeDebugger;
 using UnityEngine;
+#if UNITY_WEBGL
+using WeChatWASM;
+#endif
 
 public class SampleStart : MonoBehaviour
 {
@@ -8,13 +11,19 @@ public class SampleStart : MonoBehaviour
 
     void Start()
     {
-        var font = Resources.Load<Font>("Font37");//因为在某些平台会丢失中文,所以可以额外加载中文字体传入debug窗口
+        var font = Resources.Load<Font>("Font37"); //因为在某些平台会丢失中文,所以可以额外加载中文字体传入debug窗口
 
         //编辑器中或者development build强制打开
         //如果不是强制打开,会检查Application.persistentDataPath,中是否有 "logsetting.txt"文件,并设置LogEnable=true
-        DebugMgr = RuntimeDebugger.DebuggerMgr.Init(Application.isEditor || UnityEngine.Debug.isDebugBuild,font,12);
+        DebugMgr = RuntimeDebugger.DebuggerMgr.Init(Application.isEditor || UnityEngine.Debug.isDebugBuild, font, 12);
         if (SampleStart.DebugMgr != null)
         {
+#if UNITY_WEBGL
+            DebugMgr.SetCustomInput(() => { return true; },
+                onShowKeyboard: WXSample.OnShowKeyboard, onHideKeyboard: WXSample.OnHideKeyboard,
+                onGetKeyboardText: WXSample.OnGetKeyboardText, onSetKeyboardText: WXSample.OnSetKeyboardText
+            );
+#endif
             //设置cmd密码,密码正确才能打开cmd窗口
             SampleStart.DebugMgr.SetCmdPassword("xxxxxx");
             //添加cmd指令
@@ -60,6 +69,65 @@ public class SampleStart : MonoBehaviour
         }
     }
 }
+#if UNITY_WEBGL
+public static class WXSample
+{
+    private static string wxText;
+    private static bool _isShow;
+
+    public static void OnShowKeyboard(string text)
+    {
+        if (_isShow) return;
+        _isShow = true;
+        wxText = text;
+
+        WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
+        WX.OnKeyboardInput(OnInput);
+        WX.OnKeyboardConfirm(OnConfirm);
+        WX.OnKeyboardComplete(OnComplete);
+    }
+
+    public static void OnHideKeyboard()
+    {
+        if (!_isShow) return;
+        _isShow = false;
+        WX.OffKeyboardInput(OnInput);
+        WX.OffKeyboardConfirm(OnConfirm);
+        WX.OffKeyboardComplete(OnComplete);
+        WX.HideKeyboard(new HideKeyboardOption());
+        SampleStart.DebugMgr.NotifyKeyboardDismissed();
+    }
+
+    public static string OnGetKeyboardText()
+    {
+        return wxText;
+    }
+
+    public static void OnSetKeyboardText(string text)
+    {
+        wxText = text;
+        WX.UpdateKeyboard(new UpdateKeyboardOption { value = text });
+    }
+
+
+    private static void OnComplete(OnKeyboardInputListenerResult v)
+    {
+        wxText = v.value;
+        OnHideKeyboard();
+    }
+
+    private static void OnConfirm(OnKeyboardInputListenerResult v)
+    {
+        wxText = v.value;
+        OnHideKeyboard();
+    }
+
+    private static void OnInput(OnKeyboardInputListenerResult v)
+    {
+        wxText = v.value;
+    }
+}
+#endif
 
 public class GmTestWindow : RuntimeDebugger.ScrollableDebuggerWindowBase
 {

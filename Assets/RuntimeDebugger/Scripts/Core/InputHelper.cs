@@ -9,24 +9,45 @@ namespace RuntimeDebugger
     /// 标准移动平台（Android/iOS）使用 Unity TouchScreenKeyboard；
     /// 特殊平台（如微信小游戏）通过 DebuggerMgr.SetCustomInput() 注入回调。
     ///
-    /// 业务层对接示例（微信小游戏）：
+    /// 业务层对接示例（微信小游戏，参考 WX SDK 官方 WXInputFieldAdapter）：
     /// <code>
-    /// // 维护本地文本缓冲区，三个回调均更新以兼顾实时同步与兜底
-    /// string _wxKeyboardText = "";
+    /// string _wxText = "";
     ///
-    /// // JSLib 侧需同时监听：
-    /// //   wx.onKeyboardInput(res    => _wxKeyboardText = res.value)  // 实时同步
-    /// //   wx.onKeyboardConfirm(res  => _wxKeyboardText = res.value)  // 确认兜底
-    /// //   wx.onKeyboardComplete(res => _wxKeyboardText = res.value)  // 收起兜底
+    /// void OnWxInput(OnKeyboardInputListenerResult v)
+    /// {
+    ///     _wxText = v.value;
+    /// }
+    /// void OnWxConfirm(OnKeyboardInputListenerResult v)
+    /// {
+    ///     _wxText = v.value;
+    ///     debugger.NotifyKeyboardDismissed();  // ★ 必须
+    /// }
+    /// void OnWxComplete(OnKeyboardInputListenerResult v)
+    /// {
+    ///     _wxText = v.value;
+    ///     debugger.NotifyKeyboardDismissed();  // ★ 必须
+    /// }
     ///
     /// debugger.SetCustomInput(
     ///     isSupported:        () => IsWeChatMiniGame(),
-    ///     onShowKeyboard:     (text) => { _wxKeyboardText = text;
-    ///                                      WX.ShowKeyboard(text); },
-    ///     onHideKeyboard:     () => WX.HideKeyboard(),
-    ///     onGetKeyboardText:  () => _wxKeyboardText,
-    ///     onSetKeyboardText:  (text) => { _wxKeyboardText = text;
-    ///                                      WX.UpdateKeyboard(text); }
+    ///     onShowKeyboard:     (text) => {
+    ///         _wxText = text;
+    ///         WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
+    ///         WX.OnKeyboardInput(OnWxInput);
+    ///         WX.OnKeyboardConfirm(OnWxConfirm);
+    ///         WX.OnKeyboardComplete(OnWxComplete);
+    ///     },
+    ///     onHideKeyboard:     () => {
+    ///         WX.OffKeyboardInput(OnWxInput);
+    ///         WX.OffKeyboardConfirm(OnWxConfirm);
+    ///         WX.OffKeyboardComplete(OnWxComplete);
+    ///         WX.HideKeyboard(new HideKeyboardOption());
+    ///     },
+    ///     onGetKeyboardText:  () => _wxText,
+    ///     onSetKeyboardText:  (text) => {
+    ///         _wxText = text;
+    ///         WX.UpdateKeyboard(new UpdateKeyboardOption { value = text });
+    ///     }
     /// );
     /// </code>
     /// </summary>
@@ -66,6 +87,8 @@ namespace RuntimeDebugger
 
         private static TouchScreenKeyboard _fallbackKeyboard;
         private static bool _hasFocus;
+        private static bool _externalActive;
+        private static bool _pendingDismiss;
         private static string _lastControlName;
 
         #endregion
@@ -93,13 +116,15 @@ namespace RuntimeDebugger
 
         /// <summary>
         /// 键盘当前是否激活。
+        /// 外部键盘跟踪内部 _externalActive 标志（通过 NotifyExternalDismissed 重置）；
+        /// TouchScreenKeyboard 直接读取 active 状态。
         /// </summary>
         public static bool IsKeyboardActive
         {
             get
             {
                 if (UsingExternalKeyboard)
-                    return _hasFocus;
+                    return _externalActive;
 
                 if (_fallbackKeyboard != null)
                     return _fallbackKeyboard.active;
@@ -160,6 +185,21 @@ namespace RuntimeDebugger
             if (Event.current.type != EventType.Repaint)
                 return GetEffectiveText(textFieldText);
 
+            // 处理外部键盘关闭通知：清除 IMGUI 键盘焦点，
+            // 让下次用户点击输入框时产生真正的焦点变化，从而重新弹出键盘
+            if (_pendingDismiss)
+            {
+                _pendingDismiss = false;
+                _hasFocus = false;
+                GUIUtility.keyboardControl = 0;
+            }
+
+            // TouchScreenKeyboard 被用户手动关闭（非外部回调），自动检测并重置
+            if (_hasFocus && !IsKeyboardActive)
+            {
+                _hasFocus = false;
+            }
+
             bool currentFocus = GUI.GetNameOfFocusedControl() == controlName;
 
             if (currentFocus && !_hasFocus)
@@ -206,6 +246,18 @@ namespace RuntimeDebugger
             _hasFocus = false;
         }
 
+        /// <summary>
+        /// 业务层在微信 OnKeyboardConfirm / OnKeyboardComplete 回调中通过
+        /// DebuggerMgr.NotifyKeyboardDismissed() 间接调用。
+        /// 设置待处理标记，下一帧 OnGUI 时 SyncFromFocusChange 会清除 IMGUI 焦点，
+        /// 确保用户再次点击输入框时能触发焦点变化从而重新弹出键盘。
+        /// </summary>
+        internal static void NotifyExternalDismissed()
+        {
+            _externalActive = false;
+            _pendingDismiss = true;
+        }
+
         #endregion
 
         #region Private Methods
@@ -214,6 +266,7 @@ namespace RuntimeDebugger
         {
             if (UsingExternalKeyboard)
             {
+                _externalActive = true;
                 OnShowKeyboard?.Invoke(initialText ?? string.Empty);
                 return;
             }
@@ -235,6 +288,7 @@ namespace RuntimeDebugger
         {
             if (UsingExternalKeyboard)
             {
+                _externalActive = false;
                 OnHideKeyboard?.Invoke();
                 return;
             }
