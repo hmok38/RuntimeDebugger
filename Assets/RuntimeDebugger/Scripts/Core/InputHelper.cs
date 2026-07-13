@@ -30,24 +30,10 @@ namespace RuntimeDebugger
     ///
     /// debugger.SetCustomInput(
     ///     isSupported:        () => IsWeChatMiniGame(),
-    ///     onShowKeyboard:     (text) => {
-    ///         _wxText = text;
-    ///         WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
-    ///         WX.OnKeyboardInput(OnWxInput);
-    ///         WX.OnKeyboardConfirm(OnWxConfirm);
-    ///         WX.OnKeyboardComplete(OnWxComplete);
-    ///     },
-    ///     onHideKeyboard:     () => {
-    ///         WX.OffKeyboardInput(OnWxInput);
-    ///         WX.OffKeyboardConfirm(OnWxConfirm);
-    ///         WX.OffKeyboardComplete(OnWxComplete);
-    ///         WX.HideKeyboard(new HideKeyboardOption());
-    ///     },
+    ///     onShowKeyboard:     (text) => { ... },
+    ///     onHideKeyboard:     () => { ... },
     ///     onGetKeyboardText:  () => _wxText,
-    ///     onSetKeyboardText:  (text) => {
-    ///         _wxText = text;
-    ///         WX.UpdateKeyboard(new UpdateKeyboardOption { value = text });
-    ///     }
+    ///     onSetKeyboardText:  (text) => { ... }
     /// );
     /// </code>
     /// </summary>
@@ -216,7 +202,16 @@ namespace RuntimeDebugger
             _hasFocus = currentFocus;
             _lastControlName = controlName;
 
-            return GetEffectiveText(textFieldText);
+            string effectiveText = GetEffectiveText(textFieldText);
+
+            // 微信等外部键盘平台：将 IMGUI 光标设为透明，
+            // 避免与原生键盘光标重叠或位置不一致
+            if (UsingExternalKeyboard)
+            {
+                var s = GUI.skin.settings.cursorColor = Color.clear;
+            }
+
+            return effectiveText;
         }
 
         /// <summary>

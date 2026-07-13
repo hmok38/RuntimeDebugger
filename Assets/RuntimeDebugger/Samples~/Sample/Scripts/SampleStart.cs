@@ -1,9 +1,6 @@
 using System;
 using RuntimeDebugger;
 using UnityEngine;
-#if UNITY_WEBGL
-using WeChatWASM;
-#endif
 
 public class SampleStart : MonoBehaviour
 {
@@ -19,10 +16,11 @@ public class SampleStart : MonoBehaviour
         if (SampleStart.DebugMgr != null)
         {
 #if UNITY_WEBGL
-            DebugMgr.SetCustomInput(() => { return true; },
-                onShowKeyboard: WXSample.OnShowKeyboard, onHideKeyboard: WXSample.OnHideKeyboard,
-                onGetKeyboardText: WXSample.OnGetKeyboardText, onSetKeyboardText: WXSample.OnSetKeyboardText
-            );
+            //---------微信小游戏平台需要进行设置-------------------------------
+            //微信小游戏平台在使用debugger插件时,弹出输入法必须调用微信的接口,这里可以设置转换器,可以实现自动设置
+            //如果不需要请注释这里
+            var wxInputMgr = new WXInputAdaptation();
+            wxInputMgr.Init(DebugMgr);
 #endif
             //设置cmd密码,密码正确才能打开cmd窗口
             SampleStart.DebugMgr.SetCmdPassword("xxxxxx");
@@ -69,65 +67,7 @@ public class SampleStart : MonoBehaviour
         }
     }
 }
-#if UNITY_WEBGL
-public static class WXSample
-{
-    private static string wxText;
-    private static bool _isShow;
 
-    public static void OnShowKeyboard(string text)
-    {
-        if (_isShow) return;
-        _isShow = true;
-        wxText = text;
-
-        WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
-        WX.OnKeyboardInput(OnInput);
-        WX.OnKeyboardConfirm(OnConfirm);
-        WX.OnKeyboardComplete(OnComplete);
-    }
-
-    public static void OnHideKeyboard()
-    {
-        if (!_isShow) return;
-        _isShow = false;
-        WX.OffKeyboardInput(OnInput);
-        WX.OffKeyboardConfirm(OnConfirm);
-        WX.OffKeyboardComplete(OnComplete);
-        WX.HideKeyboard(new HideKeyboardOption());
-        SampleStart.DebugMgr.NotifyKeyboardDismissed();
-    }
-
-    public static string OnGetKeyboardText()
-    {
-        return wxText;
-    }
-
-    public static void OnSetKeyboardText(string text)
-    {
-        wxText = text;
-        WX.UpdateKeyboard(new UpdateKeyboardOption { value = text });
-    }
-
-
-    private static void OnComplete(OnKeyboardInputListenerResult v)
-    {
-        wxText = v.value;
-        OnHideKeyboard();
-    }
-
-    private static void OnConfirm(OnKeyboardInputListenerResult v)
-    {
-        wxText = v.value;
-        OnHideKeyboard();
-    }
-
-    private static void OnInput(OnKeyboardInputListenerResult v)
-    {
-        wxText = v.value;
-    }
-}
-#endif
 
 public class GmTestWindow : RuntimeDebugger.ScrollableDebuggerWindowBase
 {
