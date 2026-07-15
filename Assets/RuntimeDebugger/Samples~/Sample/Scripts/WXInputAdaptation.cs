@@ -18,6 +18,7 @@ public class WXInputAdaptation
 #if UNITY_WEBGL
     private string _wxText;
     private bool _isShow;
+    private bool _isCompleted;
 
     /// <summary>
     /// 注意,必须添加对WXSDk的依赖才能正常使用
@@ -28,7 +29,8 @@ public class WXInputAdaptation
     {
         mgr.SetCustomInput(() => true,
             onShowKeyboard: OnShowKeyboard, onHideKeyboard: OnHideKeyboard,
-            onGetKeyboardText: OnGetKeyboardText, onSetKeyboardText: OnSetKeyboardText);
+            onGetKeyboardText: OnGetKeyboardText, onSetKeyboardText: OnSetKeyboardText,
+            onGetKeyboardClosed: GetKeyboardClosed);
     }
 
     private void OnShowKeyboard(string text)
@@ -36,6 +38,7 @@ public class WXInputAdaptation
         if (_isShow) return;
         _isShow = true;
         _wxText = text;
+        _isCompleted = false;
         WX.ShowKeyboard(new ShowKeyboardOption { defaultValue = text });
         WX.OnKeyboardInput(OnInput);
         WX.OnKeyboardConfirm(OnConfirm);
@@ -50,7 +53,7 @@ public class WXInputAdaptation
         WX.OffKeyboardConfirm(OnConfirm);
         WX.OffKeyboardComplete(OnComplete);
         WX.HideKeyboard(new HideKeyboardOption());
-        SampleStart.DebugMgr.NotifyKeyboardDismissed();
+        _isCompleted = true;
     }
 
     private string OnGetKeyboardText()
@@ -80,6 +83,11 @@ public class WXInputAdaptation
     private void OnInput(OnKeyboardInputListenerResult v)
     {
         _wxText = v.value;
+    }
+
+    private bool GetKeyboardClosed()
+    {
+        return _isCompleted;
     }
 
 #endif

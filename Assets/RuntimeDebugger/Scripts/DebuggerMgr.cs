@@ -626,22 +626,15 @@ namespace RuntimeDebugger
             System.Action<string> onShowKeyboard,
             System.Action onHideKeyboard,
             System.Func<string> onGetKeyboardText,
-            System.Action<string> onSetKeyboardText)
+            System.Action<string> onSetKeyboardText,
+            System.Func<bool> onGetKeyboardClosed)
         {
             InputHelper.IsExternalKeyboardSupported = isSupported;
             InputHelper.OnShowKeyboard = onShowKeyboard;
             InputHelper.OnHideKeyboard = onHideKeyboard;
             InputHelper.OnGetKeyboardText = onGetKeyboardText;
             InputHelper.OnSetKeyboardText = onSetKeyboardText;
-        }
-
-        /// <summary>
-        /// 通知调试器外部键盘已被用户关闭（如微信 OnKeyboardConfirm / OnKeyboardComplete）。
-        /// 必须在微信回调中调用，否则用户点"完成"后再次点击输入框无法弹出键盘。
-        /// </summary>
-        public void NotifyKeyboardDismissed()
-        {
-            InputHelper.NotifyExternalDismissed();
+            InputHelper.OnGetKeyboardClosed = onGetKeyboardClosed;
         }
 
         /// <summary>

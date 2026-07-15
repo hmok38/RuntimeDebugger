@@ -12,28 +12,34 @@ namespace RuntimeDebugger
     /// 业务层对接示例（微信小游戏，参考 WX SDK 官方 WXInputFieldAdapter）：
     /// <code>
     /// string _wxText = "";
+    /// bool _wxKeyboardClosed = false;
     ///
     /// void OnWxInput(OnKeyboardInputListenerResult v)
     /// {
     ///     _wxText = v.value;
+    ///     _wxKeyboardClosed = false;   // 正在输入，键盘未关闭
     /// }
     /// void OnWxConfirm(OnKeyboardInputListenerResult v)
     /// {
     ///     _wxText = v.value;
-    ///     debugger.NotifyKeyboardDismissed();  // ★ 必须
+    ///     _wxKeyboardClosed = true;    // 用户点"完成"，标记已关闭
     /// }
     /// void OnWxComplete(OnKeyboardInputListenerResult v)
     /// {
     ///     _wxText = v.value;
-    ///     debugger.NotifyKeyboardDismissed();  // ★ 必须
+    ///     _wxKeyboardClosed = true;    // 键盘收起，标记已关闭
     /// }
     ///
     /// debugger.SetCustomInput(
-    ///     isSupported:        () => IsWeChatMiniGame(),
-    ///     onShowKeyboard:     (text) => { ... },
-    ///     onHideKeyboard:     () => { ... },
-    ///     onGetKeyboardText:  () => _wxText,
-    ///     onSetKeyboardText:  (text) => { ... }
+    ///     isSupported:          () => IsWeChatMiniGame(),
+    ///     onShowKeyboard:       (text) => {
+    ///         _wxKeyboardClosed = false;  // 重置标记
+    ///         ...
+    ///     },
+    ///     onHideKeyboard:       () => { ... },
+    ///     onGetKeyboardText:    () => _wxText,
+    ///     onSetKeyboardText:    (text) => { ... },
+    ///     onGetKeyboardClosed:  () => _wxKeyboardClosed
     /// );
     /// </code>
     /// </summary>
@@ -67,6 +73,14 @@ namespace RuntimeDebugger
         /// </summary>
         public static System.Action<string> OnSetKeyboardText;
 
+        /// <summary>
+        /// 轮询外部键盘是否已被用户关闭。
+        /// 业务层在微信 OnKeyboardConfirm / OnKeyboardComplete 中设置标记为 true，
+        /// 在 OnKeyboardInput 和 onShowKeyboard 中重置为 false。
+        /// InputHelper 每帧 OnGUI 轮询此值，一旦为 true 则重置焦点状态。
+        /// </summary>
+        public static System.Func<bool> OnGetKeyboardClosed;
+
         #endregion
 
         #region Private State
@@ -74,7 +88,6 @@ namespace RuntimeDebugger
         private static TouchScreenKeyboard _fallbackKeyboard;
         private static bool _hasFocus;
         private static bool _externalActive;
-        private static bool _pendingDismiss;
         private static string _lastControlName;
 
         #endregion
@@ -102,7 +115,7 @@ namespace RuntimeDebugger
 
         /// <summary>
         /// 键盘当前是否激活。
-        /// 外部键盘跟踪内部 _externalActive 标志（通过 NotifyExternalDismissed 重置）；
+        /// 外部键盘跟踪 _externalActive 标志；
         /// TouchScreenKeyboard 直接读取 active 状态。
         /// </summary>
         public static bool IsKeyboardActive
@@ -171,11 +184,11 @@ namespace RuntimeDebugger
             if (Event.current.type != EventType.Repaint)
                 return GetEffectiveText(textFieldText);
 
-            // 处理外部键盘关闭通知：清除 IMGUI 键盘焦点，
-            // 让下次用户点击输入框时产生真正的焦点变化，从而重新弹出键盘
-            if (_pendingDismiss)
+            // 轮询外部键盘是否已被用户关闭（微信 OnConfirm/OnComplete 中置 true）
+            // 重置焦点并清除 IMGUI keyboardControl，让下次点击能触发真正的焦点变化
+            if (_hasFocus && UsingExternalKeyboard && OnGetKeyboardClosed != null && OnGetKeyboardClosed())
             {
-                _pendingDismiss = false;
+                _externalActive = false;
                 _hasFocus = false;
                 GUIUtility.keyboardControl = 0;
             }
@@ -204,11 +217,10 @@ namespace RuntimeDebugger
 
             string effectiveText = GetEffectiveText(textFieldText);
 
-            // 微信等外部键盘平台：将 IMGUI 光标设为透明，
-            // 避免与原生键盘光标重叠或位置不一致
+            // 微信等外部键盘平台：将 IMGUI 光标设为透明
             if (UsingExternalKeyboard)
             {
-                var s = GUI.skin.settings.cursorColor = Color.clear;
+                GUI.skin.settings.cursorColor = Color.clear;
             }
 
             return effectiveText;
@@ -239,18 +251,6 @@ namespace RuntimeDebugger
         {
             HideKeyboardInternal();
             _hasFocus = false;
-        }
-
-        /// <summary>
-        /// 业务层在微信 OnKeyboardConfirm / OnKeyboardComplete 回调中通过
-        /// DebuggerMgr.NotifyKeyboardDismissed() 间接调用。
-        /// 设置待处理标记，下一帧 OnGUI 时 SyncFromFocusChange 会清除 IMGUI 焦点，
-        /// 确保用户再次点击输入框时能触发焦点变化从而重新弹出键盘。
-        /// </summary>
-        internal static void NotifyExternalDismissed()
-        {
-            _externalActive = false;
-            _pendingDismiss = true;
         }
 
         #endregion
