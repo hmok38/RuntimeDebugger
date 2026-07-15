@@ -283,7 +283,13 @@ namespace RuntimeDebugger
             return mgr;
         }
 
-        private void SetSKinFont(Font font, int fontSize = 12)
+        /// <summary>
+        /// 设置窗口的字体,如果发现在某些平台或者语言环境下,文字丢失,请传入游戏使用的中文font
+        /// 如:微信小游戏平台
+        /// </summary>
+        /// <param name="font"></param>
+        /// <param name="fontSize"></param>
+        public void SetSKinFont(Font font, int fontSize = 12)
         {
             MSkin.font = font;
             MSkin.box.fontSize = fontSize;
@@ -621,6 +627,7 @@ namespace RuntimeDebugger
         /// <param name="onHideKeyboard">隐藏键盘</param>
         /// <param name="onGetKeyboardText">获取键盘当前文本</param>
         /// <param name="onSetKeyboardText">程序化设置键盘文本</param>
+        /// <param name="onGetKeyboardClosed">获取键盘是否关闭的func</param>
         public void SetCustomInput(
             System.Func<bool> isSupported,
             System.Action<string> onShowKeyboard,
