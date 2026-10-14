@@ -50,7 +50,7 @@ namespace RuntimeDebugger
         }
 
         private static bool _fileEditMaxCount;
-
+        
         /// <summary>
         /// 导出日志的数量倍率,最大导出的日志数量为MaxCount*OutputLogNodeRate,默认10
         /// </summary>
@@ -65,6 +65,7 @@ namespace RuntimeDebugger
         private float _mWindowScale = DefaultWindowScale;
         [NonSerialized] public float MWindowWidth = DefaultWindowRect.width;
         [NonSerialized] public float MWindowHeight = DefaultWindowRect.height;
+        private bool _isVisible = true;
         private bool _mShowFullWindow;
         private Rect _mIconRect = DefaultIconRect;
         private Rect _mWindowRect = DefaultWindowRect;
@@ -82,12 +83,12 @@ namespace RuntimeDebugger
         public static int BundleVersionCode = -1;
 
         /// <summary>
-        /// 窗口
+        /// 窗口屏幕区域变化时回调；隐藏时区域为 Rect.zero。
         /// </summary>
         public Action<Rect> WindowChangeAction;
 
         /// <summary>
-        /// 当前窗口在屏幕坐标系上的位置和大小。
+        /// 当前窗口在屏幕坐标系上的位置和大小；隐藏时为 Rect.zero。
         /// </summary>
         public Rect CurrentWindowRectOnScreen { get; private set; }
 
@@ -98,17 +99,18 @@ namespace RuntimeDebugger
             get => _currentWindowRect;
             set
             {
+                value = IsVisible ? value : Rect.zero;
                 if (_currentWindowRect != value)
                 {
                     _currentWindowRect = value;
                     var minScale = Math.Min(Screen.width / DesignWidth, Screen.height / DesignHeight);
-                    var r = new Rect()
+                    var r = IsVisible ? new Rect()
                     {
                         x = _currentWindowRect.x * minScale,
                         y = Screen.height - _currentWindowRect.y * minScale,
                         width = _currentWindowRect.width * minScale,
                         height = _currentWindowRect.height * minScale
-                    };
+                    } : Rect.zero;
                     CurrentWindowRectOnScreen = r;
                     //Debug.Log($"rect {CurrentWindowRect.x*minScale} {CurrentWindowRect.y*minScale} {CurrentWindowRect.width*minScale} {CurrentWindowRect.height*minScale}");
                     WindowChangeAction?.Invoke(CurrentWindowRectOnScreen);
@@ -178,6 +180,34 @@ namespace RuntimeDebugger
                 }
 
                 return DefaultDesignWidth;
+            }
+        }
+
+        /// <summary>
+        /// 获取或设置调试窗口及悬浮图标是否显示，默认显示。隐藏时继续收集日志。
+        /// </summary>
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible == value)
+                {
+                    return;
+                }
+
+                _isVisible = value;
+                if (_imgComp != null)
+                {
+                    _imgComp.enabled = value;
+                }
+
+                CurrentWindowRect = value ? (_mShowFullWindow ? _mWindowRect : _mIconRect) : Rect.zero;
+
+                if (!value && InputHelper.IsKeyboardActive)
+                {
+                    InputHelper.HideKeyboard();
+                }
             }
         }
 
@@ -342,6 +372,11 @@ namespace RuntimeDebugger
 
         private void OnGUI()
         {
+            if (!IsVisible)
+            {
+                return;
+            }
+
             GUISkin cachedGuiSkin = GUI.skin;
             Matrix4x4 cachedMatrix = GUI.matrix;
 
