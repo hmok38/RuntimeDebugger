@@ -9,7 +9,8 @@ namespace RuntimeDebugger
     /// 运行时对象内存大小测量。
     /// 优先使用 Profiler 的原生内存统计：WebGL/微信小游戏上纹理像素数据在 JS 侧，
     /// Profiler.GetRuntimeMemorySizeLong 对这类纹理返回 0（RenderTexture 等原生创建的纹理不受影响），
-    /// 此时按尺寸、格式与 mip 数估算，并通过 estimated 告知调用方该值是推算结果。
+    /// 此时 TextAsset 改用 dataSize 的精确字节数，纹理按尺寸、格式与 mip 数估算，
+    /// 并通过 estimated 告知调用方该值是否为推算结果。
     /// </summary>
     internal static class RuntimeMemorySizeUtility
     {
@@ -27,6 +28,14 @@ namespace RuntimeDebugger
                 return size;
             }
 
+            // TextAsset 能直接读到资源数据的字节数，属于精确值，不是估算
+            TextAsset textAsset = target as TextAsset;
+            if (textAsset != null)
+            {
+                estimated = false;
+                return textAsset.dataSize;
+            }
+
             Texture texture = target as Texture;
             if (texture == null)
             {
@@ -34,6 +43,7 @@ namespace RuntimeDebugger
                 return 0L;
             }
 
+            // 纹理像素数据不在原生侧（WebGL/微信小游戏）时，按尺寸、格式与 mip 数估算
             size = EstimateTextureSize(texture);
             estimated = size > 0L;
             return size;
