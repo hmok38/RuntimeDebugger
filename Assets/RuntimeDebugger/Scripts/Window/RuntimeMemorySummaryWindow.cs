@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace RuntimeDebugger
 {
@@ -12,6 +11,7 @@ namespace RuntimeDebugger
         private DateTime m_SampleTime = DateTime.MinValue;
         private int m_SampleCount = 0;
         private long m_SampleSize = 0L;
+        private bool m_HasEstimatedSample = false;
 
         protected override void OnDrawScrollableWindow()
         {
@@ -30,7 +30,7 @@ namespace RuntimeDebugger
                 else
                 {
                     GUILayout.Label(
-                        $"<b>{m_SampleCount} Objects ({GetByteLengthString(m_SampleSize)}) obtained at {m_SampleTime.ToLocalTime():yyyy-MM-dd HH:mm:ss}.</b>");
+                        $"<b>{m_SampleCount} Objects ({GetByteLengthString(m_SampleSize, m_HasEstimatedSample)}) obtained at {m_SampleTime.ToLocalTime():yyyy-MM-dd HH:mm:ss}.</b>");
 
                     GUILayout.BeginHorizontal();
                     {
@@ -46,7 +46,8 @@ namespace RuntimeDebugger
                         {
                             GUILayout.Label(m_Records[i].Name);
                             GUILayout.Label(m_Records[i].Count.ToString(), GUILayout.Width(120f));
-                            GUILayout.Label(GetByteLengthString(m_Records[i].Size), GUILayout.Width(120f));
+                            GUILayout.Label(GetByteLengthString(m_Records[i].Size, m_Records[i].Estimated),
+                                GUILayout.Width(120f));
                         }
                         GUILayout.EndHorizontal();
                     }
@@ -61,19 +62,17 @@ namespace RuntimeDebugger
             m_SampleTime = DateTime.UtcNow;
             m_SampleCount = 0;
             m_SampleSize = 0L;
+            m_HasEstimatedSample = false;
 
             UnityEngine.Object[] samples = Resources.FindObjectsOfTypeAll<UnityEngine.Object>();
             for (int i = 0; i < samples.Length; i++)
             {
-                long sampleSize = 0L;
-#if UNITY_5_6_OR_NEWER
-                sampleSize = Profiler.GetRuntimeMemorySizeLong(samples[i]);
-#else
-                    sampleSize = Profiler.GetRuntimeMemorySize(samples[i]);
-#endif
+                bool estimated = false;
+                long sampleSize = RuntimeMemorySizeUtility.GetRuntimeMemorySize(samples[i], out estimated);
                 string name = samples[i].GetType().Name;
                 m_SampleCount++;
                 m_SampleSize += sampleSize;
+                m_HasEstimatedSample |= estimated;
 
                 Record record = null;
                 foreach (Record r in m_Records)
@@ -93,6 +92,7 @@ namespace RuntimeDebugger
 
                 record.Count++;
                 record.Size += sampleSize;
+                record.Estimated |= estimated;
             }
 
             m_Records.Sort(m_RecordComparer);
@@ -120,12 +120,14 @@ namespace RuntimeDebugger
             private readonly string m_Name;
             private int m_Count;
             private long m_Size;
+            private bool m_Estimated;
 
             public Record(string name)
             {
                 m_Name = name;
                 m_Count = 0;
                 m_Size = 0L;
+                m_Estimated = false;
             }
 
             public string Name
@@ -143,6 +145,12 @@ namespace RuntimeDebugger
             {
                 get { return m_Size; }
                 set { m_Size = value; }
+            }
+
+            public bool Estimated
+            {
+                get { return m_Estimated; }
+                set { m_Estimated = value; }
             }
         }
     }

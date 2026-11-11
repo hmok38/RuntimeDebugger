@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace RuntimeDebugger
 {
@@ -15,6 +14,7 @@ namespace RuntimeDebugger
         private long m_SampleSize = 0L;
         private long m_DuplicateSampleSize = 0L;
         private int m_DuplicateSimpleCount = 0;
+        private bool m_HasEstimatedSample = false;
 
         protected override void OnDrawScrollableWindow()
         {
@@ -37,13 +37,14 @@ namespace RuntimeDebugger
                     {
                         GUILayout.Label(string.Format(
                             "<b>{0} {1}s ({2}) obtained at {3:yyyy-MM-dd HH:mm:ss}, while {4} {1}s ({5}) might be duplicated.</b>",
-                            m_Samples.Count, typeName, GetByteLengthString(m_SampleSize), m_SampleTime.ToLocalTime(),
-                            m_DuplicateSimpleCount, GetByteLengthString(m_DuplicateSampleSize)));
+                            m_Samples.Count, typeName, GetByteLengthString(m_SampleSize, m_HasEstimatedSample),
+                            m_SampleTime.ToLocalTime(),
+                            m_DuplicateSimpleCount, GetByteLengthString(m_DuplicateSampleSize, m_HasEstimatedSample)));
                     }
                     else
                     {
                         GUILayout.Label(
-                            $"<b>{m_Samples.Count} {typeName}s ({GetByteLengthString(m_SampleSize)}) obtained at {m_SampleTime.ToLocalTime():yyyy-MM-dd HH:mm:ss}.</b>");
+                            $"<b>{m_Samples.Count} {typeName}s ({GetByteLengthString(m_SampleSize, m_HasEstimatedSample)}) obtained at {m_SampleTime.ToLocalTime():yyyy-MM-dd HH:mm:ss}.</b>");
                     }
 
                     if (m_Samples.Count > 0)
@@ -60,6 +61,7 @@ namespace RuntimeDebugger
                     int count = 0;
                     for (int i = 0; i < m_Samples.Count; i++)
                     {
+                        string sizeString = GetByteLengthString(m_Samples[i].Size, m_Samples[i].Estimated);
                         GUILayout.BeginHorizontal();
                         {
                             GUILayout.Label(m_Samples[i].Highlight
@@ -71,8 +73,8 @@ namespace RuntimeDebugger
                                     : m_Samples[i].Type, GUILayout.Width(240f));
                             GUILayout.Label(
                                 !m_Samples[i].Highlight
-                                    ? GetByteLengthString(m_Samples[i].Size)
-                                    : $"<color=yellow>{GetByteLengthString(m_Samples[i].Size)}</color>", GUILayout.Width(80f));
+                                    ? sizeString
+                                    : $"<color=yellow>{sizeString}</color>", GUILayout.Width(80f));
                         }
                         GUILayout.EndHorizontal();
 
@@ -93,19 +95,17 @@ namespace RuntimeDebugger
             m_SampleSize = 0L;
             m_DuplicateSampleSize = 0L;
             m_DuplicateSimpleCount = 0;
+            m_HasEstimatedSample = false;
             m_Samples.Clear();
 
             T[] samples = Resources.FindObjectsOfTypeAll<T>();
             for (int i = 0; i < samples.Length; i++)
             {
-                long sampleSize = 0L;
-#if UNITY_5_6_OR_NEWER
-                sampleSize = Profiler.GetRuntimeMemorySizeLong(samples[i]);
-#else
-                    sampleSize = Profiler.GetRuntimeMemorySize(samples[i]);
-#endif
+                bool estimated = false;
+                long sampleSize = RuntimeMemorySizeUtility.GetRuntimeMemorySize(samples[i], out estimated);
                 m_SampleSize += sampleSize;
-                m_Samples.Add(new Sample(samples[i].name, samples[i].GetType().Name, sampleSize));
+                m_HasEstimatedSample |= estimated;
+                m_Samples.Add(new Sample(samples[i].name, samples[i].GetType().Name, sampleSize, estimated));
             }
 
             m_Samples.Sort(m_SampleComparer);
@@ -145,13 +145,15 @@ namespace RuntimeDebugger
             private readonly string m_Name;
             private readonly string m_Type;
             private readonly long m_Size;
+            private readonly bool m_Estimated;
             private bool m_Highlight;
 
-            public Sample(string name, string type, long size)
+            public Sample(string name, string type, long size, bool estimated)
             {
                 m_Name = name;
                 m_Type = type;
                 m_Size = size;
+                m_Estimated = estimated;
                 m_Highlight = false;
             }
 
@@ -168,6 +170,11 @@ namespace RuntimeDebugger
             public long Size
             {
                 get { return m_Size; }
+            }
+
+            public bool Estimated
+            {
+                get { return m_Estimated; }
             }
 
             public bool Highlight

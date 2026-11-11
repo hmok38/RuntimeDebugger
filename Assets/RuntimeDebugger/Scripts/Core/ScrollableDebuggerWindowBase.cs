@@ -99,5 +99,14 @@ namespace RuntimeDebugger
 
             return $"{byteLength / 1152921504606846976f:F2} EB";
         }
+
+        /// <summary>
+        /// 获取字节长度文本；estimated 为 true 时加 "~" 前缀，表示该值由纹理尺寸与格式推算。
+        /// </summary>
+        protected static string GetByteLengthString(long byteLength, bool estimated)
+        {
+            string byteLengthString = GetByteLengthString(byteLength);
+            return estimated ? $"~{byteLengthString}" : byteLengthString;
+        }
     }
 }
